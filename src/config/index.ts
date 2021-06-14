@@ -8,6 +8,8 @@ const config = {
     mongo: {
         uri: env.get('MONGO_URI').required().asUrlString(),
         featureCollectionName: env.get('MONGO_FEATURE_COLLECTION_NAME').required().asString(),
+        dataCollectionName: env.get('DATA_COLLECTION_NAME').required().asString(),
+        eventsCollectionName: env.get('EVENTS_COLLECTION_NAME').required().asString(),
     },
     rabbit: {
         uri: env.get('RABBIT_URI').required().asUrlString(),

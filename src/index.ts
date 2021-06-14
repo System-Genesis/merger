@@ -5,6 +5,7 @@ import menash, { ConsumerMessage } from 'menashmq';
 import Server from './express/server';
 import config from './config';
 import * as compareFunctions from './utils/recordCompareFunctions';
+import { generateConstPersons } from './utils/mocksGenerator';
 
 const { mongo, rabbit, service } = config;
 
@@ -44,13 +45,13 @@ function findAndUpdateRecord(records: any[], record: any, compareFunction: (reco
 
 const findInMongo = async (record: any): Promise<DBPerson> => {
     // const db = mongoose.Connection;
-    const personSchema = new mongoose.Schema({
+    const DBpersonSchema = new mongoose.Schema({
         aka: { type: mongoose.Schema.Types.ObjectId },
         ads: { type: mongoose.Schema.Types.ObjectId },
         es: { type: mongoose.Schema.Types.ObjectId },
         identifiers: { personalNumber: String, identityCard: String, goalUserId: String },
     });
-    const personsDB = mongoose.model('Person', personSchema);
+    const personsDB = mongoose.model('Person', DBpersonSchema);
     return personsDB.findOne({
         $or: [
             { 'identifiers.personalNumber': record.identifiers.personalNumber },
@@ -66,6 +67,8 @@ const initializeMongo = async () => {
     await mongoose.connect(mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
 
     console.log('Mongo connection established');
+
+    generateConstPersons();
 };
 
 const initializeRabbit = async () => {

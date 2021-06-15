@@ -4,13 +4,13 @@ import { myModel } from './models';
 const generateConstPersons = () => {
     myModel.insertMany([
         {
-            firstName: 'hagai',
-            lastNmae: 'millot',
+            firstName: 'a',
+            lastNmae: 'b',
             rank: '',
             clearance: '',
             sex: '',
             personalNumber: '',
-            identityCard: '206975377',
+            identityCard: '012',
             dischargeDay: '',
             unitName: '',
             serviceType: '',
@@ -22,8 +22,8 @@ const generateConstPersons = () => {
             hierarchy: '',
         },
         {
-            firstName: 'elad',
-            lastNmae: 'birran',
+            firstName: 'c',
+            lastNmae: 'd',
             rank: '',
             clearance: '',
             sex: '',
@@ -40,8 +40,8 @@ const generateConstPersons = () => {
             hierarchy: '',
         },
         {
-            firstName: 'noam',
-            lastNmae: 'shilony',
+            firstName: 'e',
+            lastNmae: 'f',
             rank: '',
             clearance: '',
             sex: '',
@@ -58,8 +58,8 @@ const generateConstPersons = () => {
             hierarchy: '',
         },
         {
-            firstName: 'eli',
-            lastNmae: 'kovner',
+            firstName: 'h',
+            lastNmae: 'g',
             rank: '',
             clearance: '',
             sex: '',
@@ -76,8 +76,8 @@ const generateConstPersons = () => {
             hierarchy: '',
         },
         {
-            firstName: 'menachem',
-            lastNmae: 'leibman',
+            firstName: 'h',
+            lastNmae: 'i',
             rank: '',
             clearance: '',
             sex: '',

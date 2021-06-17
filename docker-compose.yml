@@ -12,10 +12,12 @@ services:
       - 5672:5672
       - 15672:15672
 
-  feature:
-    build: .
-    environment:
-      PORT: 8000
-      MONGO_URI: mongodb://mongo
-      MONGO_FEATURE_COLLECTION_NAME: feature
-      RABBIT_URI: amqp://rabbit
+  # feature:
+  #   build: .
+  #   environment:
+  #     PORT: 8000
+  #     MONGO_URI: mongodb://mongo
+  #     MONGO_FEATURE_COLLECTION_NAME: feature
+  #     RABBIT_URI: amqp://rabbit:5672
+  #     DATA_COLLECTION_NAME: MergedRecords
+  #     CONSUME_QUEUE: aftermatch

@@ -1,5 +1,5 @@
 import * as faker from 'faker';
-import { myModel } from './models';
+import myModel from './models';
 
 const generateConstPersons = () => {
     myModel.insertMany([

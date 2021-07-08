@@ -18,6 +18,8 @@ const config = {
             factor: env.get('RABBIT_RETRY_FACTOR').default(1.8).asFloatPositive(),
         },
         matchedRecords: env.get('CONSUME_QUEUE').required().asString(),
+        afterMerge: env.get('PRODUCE_QUEUE').required().asString(),
+        logQueue: env.get('LOG_QUEUE').required().asString(),
     },
 };
 

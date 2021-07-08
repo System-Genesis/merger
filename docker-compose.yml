@@ -21,3 +21,4 @@ services:
   #     RABBIT_URI: amqp://rabbit:5672
   #     DATA_COLLECTION_NAME: MergedRecords
   #     CONSUME_QUEUE: aftermatch
+  #     PRODUCE_QUEUE: afterMerge

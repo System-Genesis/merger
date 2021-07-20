@@ -2,9 +2,13 @@
 /* eslint-disable no-param-reassign */
 import * as mongoose from 'mongoose';
 import { ConsumerMessage, menash } from 'menashmq';
+// import diff from 'jest-diff';
 import config from '../config';
 import * as compareFunctions from './recordCompareFunctions';
 import personsDB from './models';
+import { difference } from './difference';
+
+const fn = require('../config/fieldNames');
 
 const { mongo, rabbit } = config;
 export interface MatchedRecord {
@@ -23,81 +27,86 @@ interface MergedOBJ {
     city: MatchedRecord[];
     nv: MatchedRecord[];
     sf: MatchedRecord[];
+    mir: MatchedRecord[];
+    lmn: MatchedRecord[];
+    mdn: MatchedRecord[];
     identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
+    updatedAt: Date;
 }
-
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
     matchedRecord: MatchedRecord,
     compareRecords: (record1, record2) => boolean,
-): MatchedRecord[] {
+): [MatchedRecord[], boolean] {
+    let updated: boolean = false;
     if (sourceMergedRecords && sourceMergedRecords.length) {
         // find all the records that are "the same" record, should be at most 1 anyway in cases of comparing by userID
-        sourceMergedRecords.filter((recordIter) => {
+        const matchingSourceMergedRecords = sourceMergedRecords.filter((recordIter) => {
             return compareRecords(recordIter, matchedRecord);
         });
         // if record found in the merged records, then we check for updates and update necessarily
-        if (sourceMergedRecords.length) {
+        if (matchingSourceMergedRecords.length) {
             // check for update/diff
             for (let i = 0; i < sourceMergedRecords.length; i += 1) {
                 const mergedRecordIter = sourceMergedRecords[i];
-                if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
-                    sourceMergedRecords[i] = matchedRecord;
-                    sourceMergedRecords[i].updatedAt = new Date();
+                if (compareRecords(sourceMergedRecords[i], matchedRecord)) {
+                    // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
+                    const diffResult = difference(mergedRecordIter.record, matchedRecord.record);
+                    if (diffResult && Object.keys(diffResult).length !== 0) {
+                        sourceMergedRecords[i] = matchedRecord;
+                        sourceMergedRecords[i].updatedAt = new Date();
+                        updated = true;
+                    }
                 }
             }
         } else {
             // if it wasnt already in the merged records then we add it to there
             sourceMergedRecords.push(matchedRecord);
             sourceMergedRecords[0].updatedAt = new Date();
+            updated = true;
         }
     } else {
         // if the person has no array of merged records for this datasource, then we add it along with the matched record.
         // eslint-disable-next-line no-param-reassign
         sourceMergedRecords = [matchedRecord]; // does it change the original? probably not
         sourceMergedRecords[0].updatedAt = new Date();
+        updated = true;
     }
     sourceMergedRecords[0].lastPing = new Date();
-    return sourceMergedRecords;
+    return [sourceMergedRecords, updated];
 }
-
-export const findInMongo = async (matchedRecord: MatchedRecord): Promise<MergedOBJ[]> => {
-    const mergedPersonsInDB: MergedOBJ[] = await personsDB
-        .find({
-            $or: [
-                { 'identifiers.personalNumber': matchedRecord.record.personalNumber },
-                { 'identifiers.identityCard': matchedRecord.record.identityCard },
-            ],
-        })
-        .exec();
-    return mergedPersonsInDB;
-};
 
 // eslint-disable-next-line import/prefer-default-export
 export const initializeMongo = async () => {
-    // eslint-disable-next-line no-console
-    console.log('Connecting to Mongo...');
-
     await mongoose.connect(mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
-
-    // eslint-disable-next-line no-console
-    console.log('Mongo connection established');
 };
 
 export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
-    // eslint-disable-next-line no-console
-    console.log('Received message: ', matchedRecord);
-    const mergedRecords: MergedOBJ[] = await findInMongo(matchedRecord);
-    // eslint-disable-next-line func-names
+    const identifiers: any[] = [];
+    if (matchedRecord.record.personalNumber) {
+        identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
+    }
+    if (matchedRecord.record.identityCard) {
+        identifiers.push({ 'identifiers.identityCard': matchedRecord.record.identityCard });
+    }
+    if (matchedRecord.record.goalUserId) {
+        identifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
+    }
+    // find in mongo
+    const mergedRecords: MergedOBJ[] = await personsDB
+        .find({
+            $or: identifiers,
+        })
+        .exec();
     if (mergedRecords && mergedRecords.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
         // by default merge into the first one in the array
         if (mergedRecords.length > 1) {
             for (let i = 1; i < mergedRecords.length; i += 1) {
-                if (mergedRecords[0].aka) mergedRecords[0].aka = mergedRecords[0].aka.concat(mergedRecords[i].aka);
-                if (mergedRecords[0].ads) mergedRecords[0].ads = mergedRecords[0].ads.concat(mergedRecords[i].ads);
-                if (mergedRecords[0].es) mergedRecords[0].es = mergedRecords[0].es.concat(mergedRecords[i].es);
-
+                ['aka', 'ads', 'sf', 'es', 'adnn', 'city', 'nv', 'mir', 'lmn', 'mdn'].forEach((x) => {
+                    if (mergedRecords[0][x] !== undefined) mergedRecords[0][x] = [...mergedRecords[0][x], ...mergedRecords[i][x]];
+                    else mergedRecords[0][x] = mergedRecords[i][x];
+                });
                 mergedRecords[0].identifiers.personalNumber = mergedRecords[0].identifiers.personalNumber
                     ? mergedRecords[0].identifiers.personalNumber
                     : mergedRecords[i].identifiers.personalNumber;
@@ -112,29 +121,24 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             }
         }
         await personsDB.deleteMany({
-            $or: [
-                { 'identifiers.personalNumber': matchedRecord.record.personalNumber },
-                { 'identifiers.identityCard': matchedRecord.record.identityCard },
-                { 'identifiers.goalUserId': matchedRecord.record.goalUserId },
-            ],
+            $or: identifiers,
         });
-
         const mergedRecord: MergedOBJ = mergedRecords[0];
         const recordDataSource: string = matchedRecord.dataSource;
+        const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
+        let updated: boolean = false;
         switch (recordDataSource) {
             case 'aka': {
-                mergedRecord.aka = findAndUpdateRecord(mergedRecord.aka, matchedRecord.record, compareFunctions.akaCompare);
+                [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord.record, compareFunctions.akaCompare);
                 break;
             }
-            case 'ads': {
-                mergedRecord.ads = findAndUpdateRecord(mergedRecord.ads, matchedRecord.record, compareFunctions.userIDCompare);
-                break;
+            default: {
+                [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
+                    mergedRecord[dataSourceRevert],
+                    matchedRecord.record,
+                    compareFunctions.userIDCompare,
+                );
             }
-            case 'es_name': {
-                mergedRecord.es = findAndUpdateRecord(mergedRecord.es, matchedRecord.record, compareFunctions.userIDCompare);
-                break;
-            }
-            default:
         }
         mergedRecord.identifiers.personalNumber = mergedRecord.identifiers.personalNumber
             ? mergedRecord.identifiers.personalNumber
@@ -145,27 +149,14 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord.identifiers.goalUserId = mergedRecord.identifiers.goalUserId
             ? mergedRecord.identifiers.goalUserId
             : matchedRecord.record.goalUserId;
+        if (updated) mergedRecord.updatedAt = new Date();
 
         await personsDB.collection.insertOne(mergedRecord);
-        await menash.send(rabbit.afterMerge, mergedRecord);
+        // if (updated) await menash.send(rabbit.afterMerge, mergedRecord); // send only if updated
     } else {
         const mergedRecord = <MergedOBJ>{};
         const recordDataSource: string = matchedRecord.dataSource;
-        switch (recordDataSource) {
-            case 'aka': {
-                mergedRecord.aka = [matchedRecord];
-                break;
-            }
-            case 'ads': {
-                mergedRecord.ads = [matchedRecord];
-                break;
-            }
-            case 'es_name': {
-                mergedRecord.es = [matchedRecord];
-                break;
-            }
-            default:
-        }
+        mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
         // mergedRecord.identifiers = { personalNumber: '', identityCard: '', goalUserId: '' };
         mergedRecord.identifiers = {
             personalNumber: matchedRecord.record.personalNumber,
@@ -174,10 +165,8 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         };
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
-        await menash.send(rabbit.afterMerge, mergedRecord);
+        // await menash.send(rabbit.afterMerge, mergedRecord);
     }
-    // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
-    // by default merge into the first one in the array
 }
 export async function featureConsumeFunction(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;

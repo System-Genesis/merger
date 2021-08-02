@@ -3,9 +3,14 @@ import * as mongoUtils from '../utils/mongoUtils';
 import { MatchedRecord } from '../utils/mongoUtils';
 import personsDB from '../utils/models';
 
+const dotenv = require('dotenv');
+
+dotenv.config();
 mongoUtils.initializeMongo();
 jest.setTimeout(30000);
 test('merges record from aka and record from es', async () => {
+    // const found2 = await personsDB.find({}).exec();
+    // console.log(found2);
     await personsDB.deleteMany({});
     const matchedRecordes: MatchedRecord = {
         record: {
@@ -134,12 +139,12 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
         lastPing: new Date(),
     };
     await mongoUtils.matchedRecordHandler(matchedRecordes);
-    console.log('MATCHED ES NOW TO MATCH ADS');
+    // console.log('MATCHED ES NOW TO MATCH ADS');
     await mongoUtils.matchedRecordHandler(matchedRecordads);
     const foundBeforeLink = await personsDB.find({}).exec();
 
-    console.log('foundBeforeLink');
-    console.log(foundBeforeLink);
+    // console.log('foundBeforeLink');
+    // console.log(foundBeforeLink);
     expect(foundBeforeLink.length).toEqual(2);
     await mongoUtils.matchedRecordHandler(matchedRecordaka);
     const foundAfterLink = await personsDB
@@ -251,7 +256,7 @@ test('adding 4th record to the first 3', async () => {
 
     const resultPerson = await personsDB.find({}).exec();
 
-    console.log('resultPerson');
-    console.log(resultPerson);
+    // console.log('resultPerson');
+    // console.log(resultPerson);
     expect(resultPerson.length).toEqual(1);
 });

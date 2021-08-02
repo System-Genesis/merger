@@ -9,6 +9,9 @@ import * as compareFunctions from './recordCompareFunctions';
 import personsDB from './models';
 import { difference } from './difference';
 
+const dotenv = require('dotenv');
+
+dotenv.config();
 const fn = require('../config/fieldNames');
 
 const { mongo } = config;
@@ -94,11 +97,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         identifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
     }
     // find in mongo
-    const mergedObjects: MergedOBJ[] = await personsDB
+    const mergedObjects: MergedOBJ[] = await personsDB.collection
         .find({
             $or: identifiers,
         })
-        .exec();
+        .toArray();
 
     if (mergedObjects && mergedObjects.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
@@ -106,14 +109,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         if (mergedObjects.length > 1) {
             for (let i = 1; i < mergedObjects.length; i += 1) {
                 ['aka', 'ads', 'sf', 'es', 'adnn', 'city', 'nv', 'mir', 'lmn', 'mdn'].forEach((x) => {
-                    if (x === 'sf') {
-                        console.log('what we found');
-                        console.log(mergedObjects[0][x]);
-                        console.log(i);
-                        console.log(mergedObjects[i][x]);
-                    }
-                    if (mergedObjects[0][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
-                    else mergedObjects[0][x] = mergedObjects[i][x];
+                    if (mergedObjects[0][x] !== undefined) {
+                        if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
+                    } else mergedObjects[0][x] = mergedObjects[i][x];
                 });
                 mergedObjects[0].identifiers.personalNumber = mergedObjects[0].identifiers.personalNumber
                     ? mergedObjects[0].identifiers.personalNumber
@@ -146,13 +144,6 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     matchedRecord,
                     compareFunctions.userIDCompare,
                 );
-                if (matchedRecord.dataSource === 'sf_name') {
-                    console.log('hello');
-                    console.log(mergedRecord.sf);
-                    console.log(mergedRecord);
-                    console.log(JSON.stringify(mergedRecord));
-                    console.log(dataSourceRevert);
-                }
             }
         }
         mergedRecord.identifiers.personalNumber = mergedRecord.identifiers.personalNumber

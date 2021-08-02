@@ -20,4 +20,26 @@ const MergedOBJSchema = new mongoose.Schema({
     identifiers: { personalNumber: String, identityCard: String, goalUserId: String },
 });
 
-export default mongoose.model(config.mongo.dataCollectionName, MergedOBJSchema);
+type MatchedRecord = {
+    record: any;
+    dataSource: string;
+    timeStamp: string;
+    updatedAt?: Date;
+    lastPing?: Date;
+};
+
+type MergedOBJ = {
+    aka: MatchedRecord[];
+    ads: MatchedRecord[];
+    es: MatchedRecord[];
+    sf: MatchedRecord[];
+    adnn: MatchedRecord[];
+    city: MatchedRecord[];
+    nv: MatchedRecord[];
+    mir: MatchedRecord[];
+    lmn: MatchedRecord[];
+    mdn: MatchedRecord[];
+    identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
+    updatedAt: Date;
+};
+export default mongoose.model<MergedOBJ>(config.mongo.dataCollectionName, MergedOBJSchema);

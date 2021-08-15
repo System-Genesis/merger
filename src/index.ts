@@ -13,6 +13,7 @@ const initializeRabbit = async () => {
     await menash.declareQueue(rabbit.afterMerge);
     await menash.declareQueue(rabbit.logQueue);
 
+    await menash.queue(rabbit.matchedRecords).prefetch(1);
     await menash.queue(rabbit.matchedRecords).activateConsumer(featureConsumeFunction, { noAck: false });
 };
 
@@ -24,6 +25,8 @@ const main = async () => {
     const server = new Server(service.port);
 
     await server.start();
+
+    console.log('start');
 };
 
 main().catch((err) => console.error(err)); // change to log

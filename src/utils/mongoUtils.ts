@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-param-reassign */
 import * as mongoose from 'mongoose';
-import { ConsumerMessage } from 'menashmq';
+import { ConsumerMessage, menash } from 'menashmq';
 // import diff from 'jest-diff';
 // import { merge } from 'lodash';
 import config from '../config';
@@ -113,6 +113,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                         if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
                     } else mergedObjects[0][x] = mergedObjects[i][x];
                 });
+
                 mergedObjects[0].identifiers.personalNumber = mergedObjects[0].identifiers.personalNumber
                     ? mergedObjects[0].identifiers.personalNumber
                     : mergedObjects[i].identifiers.personalNumber;
@@ -158,13 +159,14 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         if (updated) mergedRecord.updatedAt = new Date();
 
         await personsDB.collection.insertOne(mergedRecord);
-        // if (updated) await menash.send(rabbit.afterMerge, mergedRecord); // send only if updated
+        if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
     } else {
         const mergedRecord = <MergedOBJ>{};
         const recordDataSource: string = matchedRecord.dataSource;
         if (fn.dataSourcesRevert[recordDataSource] === undefined) {
             // error that not right source
         }
+        matchedRecord.updatedAt = new Date();
         mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
         // mergedRecord.identifiers = { personalNumber: '', identityCard: '', goalUserId: '' };
         mergedRecord.identifiers = {
@@ -172,13 +174,19 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             identityCard: matchedRecord.record.identityCard,
             goalUserId: matchedRecord.record.goalUserId,
         };
+        mergedRecord.updatedAt = new Date();
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
-        // await menash.send(rabbit.afterMerge, mergedRecord);
+        await menash.send(config.rabbit.afterMerge, mergedRecord);
     }
 }
 export async function featureConsumeFunction(msg: ConsumerMessage) {
-    const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
-    await matchedRecordHandler(matchedRecord);
+    try {
+        const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
+        await matchedRecordHandler(matchedRecord);
+    } catch (error) {
+        console.log('error', error.message);
+    }
+
     msg.ack();
 }

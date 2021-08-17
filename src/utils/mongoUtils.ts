@@ -25,15 +25,11 @@ export interface MatchedRecord {
 
 interface MergedOBJ {
     aka: MatchedRecord[];
-    ads: MatchedRecord[];
     es: MatchedRecord[];
     sf: MatchedRecord[];
     adnn: MatchedRecord[];
     city: MatchedRecord[];
-    nv: MatchedRecord[];
     mir: MatchedRecord[];
-    lmn: MatchedRecord[];
-    mdn: MatchedRecord[];
     identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
     updatedAt: Date;
 }
@@ -108,7 +104,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // by default merge into the first one in the array
         if (mergedObjects.length > 1) {
             for (let i = 1; i < mergedObjects.length; i += 1) {
-                ['aka', 'ads', 'sf', 'es', 'adnn', 'city', 'nv', 'mir', 'lmn', 'mdn'].forEach((x) => {
+                ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
                         if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
                     } else mergedObjects[0][x] = mergedObjects[i][x];

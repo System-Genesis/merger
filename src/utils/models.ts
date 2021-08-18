@@ -21,9 +21,9 @@ const MergedOBJSchema = new mongoose.Schema({
     city: { type: mongoose.Schema.Types.Array },
     mir: { type: mongoose.Schema.Types.Array },
     identifiers: {
-        personalNumber: { type: String, unique: true },
-        identityCard: { type: String, unique: true },
-        goalUserId: { type: String, unique: true },
+        personalNumber: { type: String, unique: true, sparse: true },
+        identityCard: { type: String, unique: true, sparse: true },
+        goalUserId: { type: String, unique: true, sparse: true },
     },
 });
 

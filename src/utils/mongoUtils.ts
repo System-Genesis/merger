@@ -1,3 +1,5 @@
+/* eslint-disable no-continue */
+/* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 /* eslint-disable no-param-reassign */
 import * as mongoose from 'mongoose';
@@ -30,8 +32,11 @@ interface MergedOBJ {
     adnn: MatchedRecord[];
     city: MatchedRecord[];
     mir: MatchedRecord[];
-    identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
+    identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string };
     updatedAt: Date;
+}
+function delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
@@ -99,6 +104,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         })
         .toArray();
 
+    let firstloop = true;
     if (mergedObjects && mergedObjects.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
         // by default merge into the first one in the array
@@ -123,9 +129,12 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     : mergedObjects[i].identifiers.goalUserId;
             }
         }
-        await personsDB.deleteMany({
-            $or: identifiers,
-        });
+        if (firstloop) {
+            await personsDB.deleteMany({
+                $or: identifiers,
+            });
+            firstloop = false;
+        }
         const mergedRecord: MergedOBJ = mergedObjects[0];
         const recordDataSource: string = matchedRecord.dataSource;
         const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
@@ -146,14 +155,16 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord.identifiers.personalNumber = mergedRecord.identifiers.personalNumber
             ? mergedRecord.identifiers.personalNumber
             : matchedRecord.record.personalNumber;
+        if (!mergedRecord.identifiers.personalNumber) delete mergedRecord.identifiers.personalNumber;
         mergedRecord.identifiers.identityCard = mergedRecord.identifiers.identityCard
             ? mergedRecord.identifiers.identityCard
             : matchedRecord.record.identityCard;
+        if (!mergedRecord.identifiers.identityCard) delete mergedRecord.identifiers.identityCard;
         mergedRecord.identifiers.goalUserId = mergedRecord.identifiers.goalUserId
             ? mergedRecord.identifiers.goalUserId
             : matchedRecord.record.goalUserId;
+        if (!mergedRecord.identifiers.goalUserId) delete mergedRecord.identifiers.goalUserId;
         if (updated) mergedRecord.updatedAt = new Date();
-
         await personsDB.collection.insertOne(mergedRecord);
         if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
     } else {
@@ -166,9 +177,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
         // mergedRecord.identifiers = { personalNumber: '', identityCard: '', goalUserId: '' };
         mergedRecord.identifiers = {
-            personalNumber: matchedRecord.record.personalNumber,
-            identityCard: matchedRecord.record.identityCard,
-            goalUserId: matchedRecord.record.goalUserId,
+            personalNumber: matchedRecord.record.personalNumber ? matchedRecord.record.personalNumber : undefined,
+            identityCard: matchedRecord.record.identityCard ? matchedRecord.record.identityCard : undefined,
+            goalUserId: matchedRecord.record.goalUserId ? matchedRecord.record.goalUserId : undefined,
         };
         mergedRecord.updatedAt = new Date();
         // save newMergeRecord in DB
@@ -177,12 +188,20 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     }
 }
 export async function featureConsumeFunction(msg: ConsumerMessage) {
-    try {
-        const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
-        await matchedRecordHandler(matchedRecord);
-    } catch (error) {
-        console.log('error', error.message);
-    }
+    const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
+    // eslint-disable-next-line no-constant-condition
+    while (true)
+        try {
+            await matchedRecordHandler(matchedRecord);
+        } catch (error) {
+            if (error.code === 11000) {
+                await delay(20);
+                continue;
+            } else {
+                console.log('error', error.message);
+                break;
+            }
+        }
 
     msg.ack();
 }

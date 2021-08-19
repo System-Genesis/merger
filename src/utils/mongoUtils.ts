@@ -86,7 +86,7 @@ export const initializeMongo = async () => {
     await mongoose.connect(mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
 };
 
-export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
+export async function matchedRecordHandler(matchedRecord: MatchedRecord, firstloop: boolean) {
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
         identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
@@ -103,8 +103,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             $or: identifiers,
         })
         .toArray();
-
-    let firstloop = true;
+    // console.log('found');
+    // console.log(mergedObjects);
+    // const firstloop = true;
     if (mergedObjects && mergedObjects.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
         // by default merge into the first one in the array
@@ -129,11 +130,10 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     : mergedObjects[i].identifiers.goalUserId;
             }
         }
-        if (firstloop) {
+        if (!firstloop) {
             await personsDB.deleteMany({
                 $or: identifiers,
             });
-            firstloop = false;
         }
         const mergedRecord: MergedOBJ = mergedObjects[0];
         const recordDataSource: string = matchedRecord.dataSource;
@@ -165,6 +165,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             : matchedRecord.record.goalUserId;
         if (!mergedRecord.identifiers.goalUserId) delete mergedRecord.identifiers.goalUserId;
         if (updated) mergedRecord.updatedAt = new Date();
+        // console.log('inserting 1');
         await personsDB.collection.insertOne(mergedRecord);
         if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
     } else {
@@ -183,25 +184,30 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         };
         mergedRecord.updatedAt = new Date();
         // save newMergeRecord in DB
+        // console.log('inserting 2');
         await personsDB.collection.insertOne(mergedRecord);
         await menash.send(config.rabbit.afterMerge, mergedRecord);
     }
 }
 export async function featureConsumeFunction(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
+    let firstloop = true;
     // eslint-disable-next-line no-constant-condition
-    while (true)
+    while (true) {
         try {
-            await matchedRecordHandler(matchedRecord);
+            console.log('trying to insert');
+            await matchedRecordHandler(matchedRecord, firstloop);
         } catch (error) {
             if (error.code === 11000) {
                 await delay(20);
+                firstloop = false;
                 continue;
             } else {
                 console.log('error', error.message);
                 break;
             }
         }
-
+        break;
+    }
     msg.ack();
 }

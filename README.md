@@ -1,11 +1,2 @@
-## TS Template
-
-### Setup:
-
-1. Install recommended VS Code extentions:
-
-    - eslint "dbaeumer.vscode-eslint"
-    - prettier "esbenp.prettier-vscode"
-
-2. Install node dependencies ("npm install")
-3. Everything should work now
+# merger
+Receives from the basic match and merges records from all data sources into one person.

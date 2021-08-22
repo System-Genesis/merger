@@ -44,5 +44,6 @@ type MergedOBJ = {
     mir: MatchedRecord[];
     identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
     updatedAt: Date;
+    lock: number;
 };
 export default mongoose.model<MergedOBJ>(config.mongo.dataCollectionName, MergedOBJSchema);

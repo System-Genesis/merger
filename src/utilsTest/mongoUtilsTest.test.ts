@@ -1,13 +1,16 @@
 /* eslint-disable no-console */
 import * as mongoUtils from '../utils/mongoUtils';
-import { MatchedRecord } from '../utils/mongoUtils';
+import initializeMongo from '../utils/initializeMongo';
 import personsDB from '../utils/models';
+import { MatchedRecord } from '../utils/types';
 
 const dotenv = require('dotenv');
 
 dotenv.config();
-mongoUtils.initializeMongo();
+initializeMongo();
+
 jest.setTimeout(30000);
+
 test('merges record from aka and record from es', async () => {
     // const found2 = await personsDB.find({}).exec();
     // console.log(found2);

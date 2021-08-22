@@ -1,42 +1,14 @@
+import { deleteMany, findByIdentifiers, insertOne } from './initializeMongo';
 /* eslint-disable no-console */
 /* eslint-disable no-param-reassign */
-import * as mongoose from 'mongoose';
-import { ConsumerMessage, menash } from 'menashmq';
 // import diff from 'jest-diff';
 // import { merge } from 'lodash';
-import config from '../config';
 import * as compareFunctions from './recordCompareFunctions';
-import personsDB from './models';
 import { difference } from './difference';
+import { MatchedRecord, MergedOBJ } from './types';
+import { sendToQueue } from '../rabbit';
+import fn from '../config/fieldNames';
 
-const dotenv = require('dotenv');
-
-dotenv.config();
-const fn = require('../config/fieldNames');
-
-const { mongo } = config;
-export interface MatchedRecord {
-    record: any;
-    dataSource: string;
-    timeStamp: string;
-    updatedAt?: Date;
-    lastPing?: Date;
-}
-
-interface MergedOBJ {
-    aka: MatchedRecord[];
-    ads: MatchedRecord[];
-    es: MatchedRecord[];
-    sf: MatchedRecord[];
-    adnn: MatchedRecord[];
-    city: MatchedRecord[];
-    nv: MatchedRecord[];
-    mir: MatchedRecord[];
-    lmn: MatchedRecord[];
-    mdn: MatchedRecord[];
-    identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
-    updatedAt: Date;
-}
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
     matchedRecord: MatchedRecord,
@@ -79,13 +51,7 @@ export function findAndUpdateRecord(
     sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
 }
-
-// eslint-disable-next-line import/prefer-default-export
-export const initializeMongo = async () => {
-    await mongoose.connect(mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
-};
-
-export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
+const findMergedObj = async (matchedRecord: MatchedRecord) => {
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
         identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
@@ -97,11 +63,12 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         identifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
     }
     // find in mongo
-    const mergedObjects: MergedOBJ[] = await personsDB.collection
-        .find({
-            $or: identifiers,
-        })
-        .toArray();
+    const mergedObjects: MergedOBJ[] = await findByIdentifiers(identifiers);
+    return { mergedObjects, identifiers };
+};
+
+export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
+    const { mergedObjects, identifiers } = await findMergedObj(matchedRecord);
 
     if (mergedObjects && mergedObjects.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
@@ -127,9 +94,8 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     : mergedObjects[i].identifiers.goalUserId;
             }
         }
-        await personsDB.deleteMany({
-            $or: identifiers,
-        });
+        await deleteMany(identifiers);
+
         const mergedRecord: MergedOBJ = mergedObjects[0];
         const recordDataSource: string = matchedRecord.dataSource;
         const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
@@ -158,8 +124,8 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             : matchedRecord.record.goalUserId;
         if (updated) mergedRecord.updatedAt = new Date();
 
-        await personsDB.collection.insertOne(mergedRecord);
-        if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
+        await insertOne(mergedRecord);
+        if (updated) await sendToQueue(mergedRecord); // send only if updated
     } else {
         const mergedRecord = <MergedOBJ>{};
         const recordDataSource: string = matchedRecord.dataSource;
@@ -176,17 +142,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         };
         mergedRecord.updatedAt = new Date();
         // save newMergeRecord in DB
-        await personsDB.collection.insertOne(mergedRecord);
-        await menash.send(config.rabbit.afterMerge, mergedRecord);
+        await insertOne(mergedRecord);
+        await sendToQueue(mergedRecord);
     }
-}
-export async function featureConsumeFunction(msg: ConsumerMessage) {
-    try {
-        const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
-        await matchedRecordHandler(matchedRecord);
-    } catch (error) {
-        console.log('error', error.message);
-    }
-
-    msg.ack();
 }

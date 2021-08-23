@@ -112,7 +112,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             return o.lock;
         }),
     );
-    identifiers.push({ lock: maxLock });
+    const lockIdentifier = { lock: maxLock };
     // const firstloop = true;
     if (mergedObjects && mergedObjects.length >= 1) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
@@ -180,7 +180,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // console.log(found);
         // if (recordDataSource === 'city_name') console.log('ITS CITY');
         mergedRecord.lock = maxLock + 1;
-        const result = await personsDB.collection.replaceOne({ $and: identifiers }, mergedRecord);
+        const result = await personsDB.collection.replaceOne({ $and: [{ $or: identifiers }, lockIdentifier] }, mergedRecord);
         // console.log(identifiers);
         // console.log(result.result);
         if (result.result.n === 0) return false;

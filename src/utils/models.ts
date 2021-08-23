@@ -14,17 +14,19 @@ import config from '../config/index';
 
 const MatchedRecordSchema = new mongoose.Schema({ record: Object, source: String, timeStamp: String }); */
 const MergedOBJSchema = new mongoose.Schema({
-    aka: { type: mongoose.Schema.Types.Array },
-    es: { type: mongoose.Schema.Types.Array },
-    sf: { type: mongoose.Schema.Types.Array },
-    adnn: { type: mongoose.Schema.Types.Array },
-    city: { type: mongoose.Schema.Types.Array },
-    mir: { type: mongoose.Schema.Types.Array },
+    _id: { type: mongoose.Schema.Types.ObjectId, required: false, auto: true, select: false },
+    aka: { type: [], require: false, default: undefined },
+    es: { type: [], require: false, default: undefined },
+    sf: { type: [], require: false, default: undefined },
+    city: { type: [], require: false, default: undefined },
+    adnn: { type: [], require: false, default: undefined },
+    mir: { type: [], require: false, default: undefined },
     identifiers: {
-        personalNumber: { type: String, unique: true, sparse: true },
-        identityCard: { type: String, unique: true, sparse: true },
-        goalUserId: { type: String, unique: true, sparse: true },
+        personalNumber: { type: String, unique: true, required: false, sparse: true },
+        identityCard: { type: String, unique: true, required: false, sparse: true },
+        goalUserId: { type: String, unique: true, required: false, sparse: true },
     },
+    lock: Number,
 });
 
 type MatchedRecord = {

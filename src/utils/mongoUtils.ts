@@ -100,9 +100,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     const mergedObjects: MergedOBJ[] = await personsDB.find({
         $or: identifiers,
     });
-    console.log('found');
-    console.log(mergedObjects);
-    console.log(identifiers);
+    // console.log('found');
+    // console.log(mergedObjects);
+    // console.log(identifiers);
     // eslint-disable-next-line prefer-spread
     const maxLock = Math.max.apply(
         Math,
@@ -178,21 +178,37 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // console.log('inserting 1');
         // console.log(found);
         // if (recordDataSource === 'city_name') console.log('ITS CITY');
-        console.log('mergedRecord');
-        console.log(mergedRecord);
+        // console.log('mergedRecord');
+        // console.log(JSON.stringify(mergedRecord));
         mergedRecord.lock = maxLock + 1;
-        console.log('HERE');
-        await personsDB.collection.deleteMany({ $and: [{ $or: identifiers }, { lock: { $lt: mergedRecord.lock } }] });
+        // console.log('HERE');
+        const insertSession = personsDB.startSession();
         try {
-            await personsDB.collection.insertOne(mergedRecord);
-        } catch (error) {
-            if (error.code === 11000) {
-                console.log('false1');
-                console.log('error', error.message);
-                return false;
-            }
-            console.log('error', error.message);
-            return true;
+            await (
+                await insertSession
+            ).withTransaction(async () => {
+                // console.log('IN SESSION');
+                await personsDB.collection.deleteMany({ $and: [{ $or: identifiers }, { lock: { $lte: mergedRecord.lock } }] });
+                // console.log('AFTER DELETE');
+                // const mergedObjects2: MergedOBJ[] = await personsDB.find({
+                //    $or: identifiers,
+                // });
+                // console.log('AFTER FIND');
+                // console.log(mergedObjects2);
+                // console.log('123');
+                // console.log(ret.result.n);
+                // if (ret.result.n !== mergedObjects.length) console.log('AAAAAAAAAAAAAAAA');
+                await personsDB.collection.insertOne(mergedRecord);
+                // console.log('REPLACED');
+                // const mergedObjects3: MergedOBJ[] = await personsDB.find({
+                //    $or: identifiers,
+                // });
+                // console.log('AFTER FIND2');
+                // console.log(mergedObjects3);
+                await (await insertSession).commitTransaction();
+            });
+        } finally {
+            await (await insertSession).endSession();
         }
         // const result = await personsDB.collection.replaceOne({ $and: [{ $or: identifiers }, lockIdentifier] }, mergedRecord);
         // console.log(identifiers);
@@ -204,9 +220,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // console.log('found2');
         // console.log(mergedObjects2);
         if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
-        return true;
-    }
-    {
+    } else {
         const mergedRecord = <MergedOBJ>{};
         const recordDataSource: string = matchedRecord.dataSource;
         if (fn.dataSourcesRevert[recordDataSource] === undefined) {
@@ -228,32 +242,32 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord.updatedAt = new Date();
         // save newMergeRecord in DB
         // console.log('inserting 2');
-        // console.log(found);
+        // console.log(mergedObjects);
+        // console.log('mergedRecords2');
+        // console.log(mergedRecord);
         mergedRecord.lock = 0;
-        try {
-            await personsDB.collection.insertOne(mergedRecord);
-        } catch (error) {
-            if (error.code === 11000) {
-                console.log('false1');
-                console.log('error', error.message);
-                return false;
-            }
-            console.log('error', error.message);
-            return true;
-        }
+        await personsDB.collection.insertOne(mergedRecord);
         await menash.send(config.rabbit.afterMerge, mergedRecord);
-        return true;
     }
 }
 export async function featureConsumeFunction(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
     // eslint-disable-next-line no-constant-condition
     while (true) {
-        console.log('trying to insert');
-        const res = await matchedRecordHandler(matchedRecord);
-        if (res) {
-            break;
+        // console.log('trying to insert');
+        try {
+            await matchedRecordHandler(matchedRecord);
+        } catch (error) {
+            if (error.code === 11000) {
+                // console.log('false0');
+                console.log('error', error.message);
+                continue;
+            } else {
+                console.log('error', error.message);
+                break;
+            }
         }
+        break;
     }
     msg.ack();
 }

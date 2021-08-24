@@ -45,7 +45,7 @@ export function findAndUpdateRecord(
     if (sourceMergedRecords && sourceMergedRecords.length) {
         // find all the records that are "the same" record, should be at most 1 anyway in cases of comparing by userID
         const matchingSourceMergedRecords = sourceMergedRecords.filter((recordIter) => {
-            return compareRecords(recordIter, matchedRecord);
+            return compareRecords(recordIter.record, matchedRecord.record);
         });
         // if record found in the merged records, then we check for updates and update necessarily
         if (matchingSourceMergedRecords.length) {

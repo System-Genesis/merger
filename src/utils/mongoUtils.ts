@@ -96,9 +96,16 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         identifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
     }
     // find in mongo
+    const foundIdentifiers: any[] = [];
     const mergedObjects: MergedOBJ[] = await personsDB.find({
         $or: identifiers,
     });
+    // eslint-disable-next-line no-restricted-syntax
+    for (const record of mergedObjects) {
+        if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
+        if (record.identifiers.identityCard) foundIdentifiers.push({ 'identifiers.identityCard': matchedRecord.record.identityCard });
+        if (record.identifiers.goalUserId) foundIdentifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
+    }
     // eslint-disable-next-line prefer-spread
     const maxLock = Math.max.apply(
         Math,
@@ -167,7 +174,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             await (
                 await insertSession
             ).withTransaction(async () => {
-                await personsDB.collection.deleteMany({ $and: [{ $or: identifiers }, { lock: { $lte: mergedRecord.lock } }] });
+                await personsDB.collection.deleteMany({ $and: [{ $or: foundIdentifiers }, { lock: { $lte: mergedRecord.lock } }] });
                 await personsDB.collection.insertOne(mergedRecord);
                 await (await insertSession).commitTransaction();
             });

@@ -52,7 +52,7 @@ export function findAndUpdateRecord(
             // check for update/diff
             for (let i = 0; i < sourceMergedRecords.length; i += 1) {
                 const mergedRecordIter = sourceMergedRecords[i];
-                if (compareRecords(sourceMergedRecords[i], matchedRecord)) {
+                if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
                     // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
                     const diffResult = difference(mergedRecordIter.record, matchedRecord.record);
                     if (diffResult && Object.keys(diffResult).length !== 0) {

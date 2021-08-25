@@ -1,11 +1,10 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-console */
 import menash from 'menashmq';
-import Server from './express/server';
 import config from './config';
 import { initializeMongo, featureConsumeFunction } from './utils/mongoUtils';
 
-const { rabbit, service } = config;
+const { rabbit } = config;
 
 const initializeRabbit = async () => {
     await menash.connect(rabbit.uri, rabbit.retryOptions);
@@ -21,10 +20,6 @@ const main = async () => {
     await initializeMongo();
 
     await initializeRabbit();
-
-    const server = new Server(service.port);
-
-    await server.start();
 
     console.log('start');
 };

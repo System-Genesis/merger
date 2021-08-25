@@ -12,7 +12,7 @@ const initializeRabbit = async () => {
     await menash.declareQueue(rabbit.afterMerge);
     await menash.declareQueue(rabbit.logQueue);
 
-    await menash.queue(rabbit.matchedRecords).prefetch(1);
+    // await menash.queue(rabbit.matchedRecords).prefetch(1);
     await menash.queue(rabbit.matchedRecords).activateConsumer(featureConsumeFunction, { noAck: false });
 };
 

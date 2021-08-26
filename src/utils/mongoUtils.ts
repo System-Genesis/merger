@@ -102,9 +102,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     });
     // eslint-disable-next-line no-restricted-syntax
     for (const record of mergedObjects) {
-        if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
-        if (record.identifiers.identityCard) foundIdentifiers.push({ 'identifiers.identityCard': matchedRecord.record.identityCard });
-        if (record.identifiers.goalUserId) foundIdentifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
+        if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': record.identifiers.personalNumber });
+        if (record.identifiers.identityCard) foundIdentifiers.push({ 'identifiers.identityCard': record.identifiers.identityCard });
+        if (record.identifiers.goalUserId) foundIdentifiers.push({ 'identifiers.goalUserId': record.identifiers.goalUserId });
     }
     // eslint-disable-next-line prefer-spread
     const maxLock = Math.max.apply(

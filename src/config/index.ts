@@ -3,7 +3,7 @@ import './dotenv';
 
 const config = {
     mongo: {
-        uri: env.get('MONGO_URI').required().asUrlString(),
+        uri: env.get('MONGO_URI').required().asString(),
         featureCollectionName: env.get('MONGO_FEATURE_COLLECTION_NAME').required().asString(),
         dataCollectionName: env.get('DATA_COLLECTION_NAME').required().asString(),
     },

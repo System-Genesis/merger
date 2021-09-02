@@ -1,4 +1,3 @@
-  
 FROM node:13.12-alpine AS builder
 WORKDIR /
 COPY package*.json ./

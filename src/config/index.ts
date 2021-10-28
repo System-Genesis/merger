@@ -17,6 +17,7 @@ const config = {
         matchedRecords: env.get('CONSUME_QUEUE').required().asString(),
         afterMerge: env.get('PRODUCE_QUEUE').required().asString(),
         logQueue: env.get('LOG_QUEUE').required().asString(),
+        prefetch: env.get('PREFETCH').required().default(100).asIntPositive(),
     },
 };
 

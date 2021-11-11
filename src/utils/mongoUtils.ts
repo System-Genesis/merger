@@ -174,8 +174,23 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             await (
                 await insertSession
             ).withTransaction(async () => {
+                const beforeDelete = mergedObjects.length;
                 await personsDB.collection.deleteMany({ $and: [{ $or: foundIdentifiers }, { lock: { $lte: mergedRecord.lock } }] });
+                const mergedObjectsAfterDelete: MergedOBJ[] = await personsDB.find({
+                    $or: identifiers,
+                });
+                const afterDelete = mergedObjectsAfterDelete.length;
                 await personsDB.collection.insertOne(mergedRecord);
+                const mergedObjectsAfterReinsert: MergedOBJ[] = await personsDB.find({
+                    $or: identifiers,
+                });
+                const afterReinsert = mergedObjectsAfterReinsert.length;
+                console.log('before delete:');
+                console.log(beforeDelete);
+                console.log('after delete:');
+                console.log(afterDelete);
+                console.log('after reinsert:');
+                console.log(afterReinsert);
                 await (await insertSession).commitTransaction();
             });
         } finally {

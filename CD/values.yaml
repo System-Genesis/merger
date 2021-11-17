@@ -1,0 +1,34 @@
+name: "merger"
+replicaCount: 1
+
+images:
+  PullSecrets: 
+    name: kartingreg
+  repository: rabazhub.azurecr.io/values-test
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 3000
+
+# volume:
+#   -name:
+#    mountPath:
+#    type:
+#    claimName:
+
+config:
+  configmaps: 
+    name: merger
+
+ingress:
+  enabled: true
+  hosts:
+  - host: test-cd.branch-yesodot.org
+    paths:
+      - path: /message
+        service: testname
+        port: "3000"
+  

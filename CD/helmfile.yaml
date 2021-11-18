@@ -13,7 +13,7 @@ releases:
   chart: yesodot/common
   version: {{ requiredEnv "COMMON_VERSION" | default "0.1.0" }}
   values:
-    - ./values/merger-values.yaml
+    - ./values.yaml
 
 helmDefaults:
   createNamespace: true

@@ -4,7 +4,7 @@ replicaCount: 1
 images:
   PullSecrets: 
     name: kartingreg
-  repository: rabazhub.azurecr.io/values-test
+  repository: genesisproject.azurecr.io/merger
   tag: "latest"
 
 service:
@@ -22,13 +22,3 @@ service:
 config:
   configmaps: 
     name: merger
-
-ingress:
-  enabled: true
-  hosts:
-  - host: test-cd.branch-yesodot.org
-    paths:
-      - path: /message
-        service: testname
-        port: "3000"
-  

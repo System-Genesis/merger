@@ -6,16 +6,19 @@ import * as mongoose from 'mongoose';
 import { ConsumerMessage, menash } from 'menashmq';
 // import diff from 'jest-diff';
 // import { merge } from 'lodash';
+import logger from 'logger-genesis';
 import config from '../config';
 import * as compareFunctions from './recordCompareFunctions';
 import personsDB from './models';
 import { difference } from './difference';
+import { scopeOption } from './log';
 
 const dotenv = require('dotenv');
 
 dotenv.config();
 const fn = require('../config/fieldNames');
 
+const { logFields } = fn;
 const { mongo } = config;
 export interface MatchedRecord {
     record: any;
@@ -216,9 +219,11 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
             await matchedRecordHandler(matchedRecord);
         } catch (error) {
             if (error.code === 11000) {
+                logger.error(false, logFields.scopes.app as scopeOption, 'Unknown source', `Source: ${dataSource} not found`);
                 console.log('error', error.message);
                 continue;
             } else {
+                logger.error(false, logFields.scopes.app as scopeOption, 'Unknown source', `Source: ${dataSource} not found`);
                 console.log('error', error.message);
                 break;
             }

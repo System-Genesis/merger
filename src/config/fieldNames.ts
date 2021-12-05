@@ -29,4 +29,15 @@ module.exports = {
         city_name: 'city',
         mir_name: 'mir',
     },
+    logFields: {
+        scopes: {
+            app: 'APP',
+            system: 'SYSTEM',
+        },
+        levels: {
+            info: 'info',
+            warn: 'warn',
+            error: 'error',
+        },
+    },
 };

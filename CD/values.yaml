@@ -1,0 +1,24 @@
+name: "merger"
+replicaCount: 1
+
+images:
+  PullSecrets: 
+    name: kartingreg
+  repository: genesisproject.azurecr.io/merger
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 3000
+
+# volume:
+#   -name:
+#    mountPath:
+#    type:
+#    claimName:
+
+config:
+  configmaps: 
+    name: merger

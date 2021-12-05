@@ -4,9 +4,10 @@ import './dotenv';
 const config = {
     service: {
         port: env.get('PORT').required().asPortNumber(),
+        name: env.get('SERVICE_NAME').required().asString(),
     },
     mongo: {
-        uri: env.get('MONGO_URI').required().asUrlString(),
+        uri: env.get('MONGO_URI').required().asString(),
         featureCollectionName: env.get('MONGO_FEATURE_COLLECTION_NAME').required().asString(),
         dataCollectionName: env.get('DATA_COLLECTION_NAME').required().asString(),
     },
@@ -20,7 +21,9 @@ const config = {
         matchedRecords: env.get('CONSUME_QUEUE').required().asString(),
         afterMerge: env.get('PRODUCE_QUEUE').required().asString(),
         logQueue: env.get('LOG_QUEUE').required().asString(),
+        prefetch: env.get('PREFETCH').required().default(100).asIntPositive(),
     },
+    systemName: env.get('SYSTEM_NAME').required().asString(),
 };
 
 export default config;

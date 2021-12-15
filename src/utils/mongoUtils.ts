@@ -58,7 +58,8 @@ export function findAndUpdateRecord(
                 if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
                     // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
                     const diffResult = difference(mergedRecordIter.record, matchedRecord.record);
-                    if (diffResult && Object.keys(diffResult).length !== 0) {
+                    const diffResult2 = difference(mergedRecordIter.record, matchedRecord.record);
+                    if ((diffResult && Object.keys(diffResult).length !== 0) || (diffResult2 && Object.keys(diffResult2).length !== 0)) {
                         sourceMergedRecords[i] = matchedRecord;
                         sourceMergedRecords[i].updatedAt = new Date();
                         updated = true;
@@ -66,7 +67,7 @@ export function findAndUpdateRecord(
                             false,
                             logFields.scopes.app as scopeOption,
                             'Updated current record of person',
-                            `identifiers: ${matchedRecord.record.identifiers}`,
+                            `identifiers: ${matchedRecord.record.identifiers}`, // TODO: add source
                         );
                     }
                 }
@@ -81,7 +82,7 @@ export function findAndUpdateRecord(
                 logFields.scopes.app as scopeOption,
                 'Added new source to person',
                 // eslint-disable-next-line no-useless-concat
-                `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+                `identifiers: ${matchedRecord.record.identifiers}, Source: ${matchedRecord.dataSource}`,
             );
         }
     } else {
@@ -95,7 +96,7 @@ export function findAndUpdateRecord(
             logFields.scopes.app as scopeOption,
             'Added new source to person',
             // eslint-disable-next-line no-useless-concat
-            `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+            `identifiers: ${matchedRecord.record.identifiers}, Source: ${matchedRecord.dataSource}`,
         );
     }
     sourceMergedRecords[0].lastPing = new Date();
@@ -238,6 +239,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             'Added new person to DB',
             // eslint-disable-next-line no-useless-concat
             `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+            // {id: identifier} add identifier
         );
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);

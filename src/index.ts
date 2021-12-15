@@ -23,7 +23,7 @@ const initializeRabbit = async () => {
 };
 
 const main = async () => {
-    logger.initialize('Genesis', 'merger', 'log-queue', false);
+    logger.initialize('Traking', 'Merger', 'log-queue', false);
     await initializeMongo();
     logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Mongo', 'Initialized Mongo');
     await initializeRabbit();

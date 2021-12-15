@@ -55,7 +55,7 @@ export function findAndUpdateRecord(
                 if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
                     // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
                     const diffResult = difference(mergedRecordIter.record, matchedRecord.record);
-                    const diffResult2 = difference(mergedRecordIter.record, matchedRecord.record);
+                    const diffResult2 = difference(matchedRecord.record, mergedRecordIter.record);
                     if ((diffResult && Object.keys(diffResult).length !== 0) || (diffResult2 && Object.keys(diffResult2).length !== 0)) {
                         sourceMergedRecords[i] = matchedRecord;
                         sourceMergedRecords[i].updatedAt = new Date();

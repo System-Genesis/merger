@@ -6,16 +6,19 @@ import * as mongoose from 'mongoose';
 import { ConsumerMessage, menash } from 'menashmq';
 // import diff from 'jest-diff';
 // import { merge } from 'lodash';
+import logger from 'logger-genesis';
 import config from '../config';
 import * as compareFunctions from './recordCompareFunctions';
 import personsDB from './models';
 import { difference } from './difference';
+import { scopeOption } from './log';
 
 const dotenv = require('dotenv');
 
 dotenv.config();
 const fn = require('../config/fieldNames');
 
+const { logFields } = fn;
 const { mongo } = config;
 export interface MatchedRecord {
     record: any;
@@ -60,6 +63,12 @@ export function findAndUpdateRecord(
                         sourceMergedRecords[i] = matchedRecord;
                         sourceMergedRecords[i].updatedAt = new Date();
                         updated = true;
+                        logger.info(
+                            false,
+                            logFields.scopes.app as scopeOption,
+                            'Updated current record of person',
+                            `identifiers: ${matchedRecord.record.identifiers}`,
+                        );
                     }
                 }
             }
@@ -68,6 +77,13 @@ export function findAndUpdateRecord(
             matchedRecord.updatedAt = new Date();
             sourceMergedRecords.push(matchedRecord);
             updated = true;
+            logger.info(
+                false,
+                logFields.scopes.app as scopeOption,
+                'Added new source to person',
+                // eslint-disable-next-line no-useless-concat
+                `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+            );
         }
     } else {
         // if the person has no array of merged records for this datasource, then we add it along with the matched record.
@@ -75,6 +91,13 @@ export function findAndUpdateRecord(
         sourceMergedRecords = [matchedRecord]; // does it change the original? probably not
         sourceMergedRecords[0].updatedAt = new Date();
         updated = true;
+        logger.info(
+            false,
+            logFields.scopes.app as scopeOption,
+            'Added new source to person',
+            // eslint-disable-next-line no-useless-concat
+            `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+        );
     }
     sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
@@ -86,6 +109,7 @@ export const initializeMongo = async () => {
 };
 
 export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
+    console.log('Got Request');
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
         identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
@@ -120,6 +144,12 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // by default merge into the first one in the array
         if (mergedObjects.length > 1) {
             for (let i = 1; i < mergedObjects.length; i += 1) {
+                logger.info(
+                    false,
+                    logFields.scopes.app as scopeOption,
+                    'Unifying existing records',
+                    `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+                );
                 ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
                         if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
@@ -204,6 +234,13 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord.updatedAt = new Date();
 
         mergedRecord.lock = 0;
+        logger.info(
+            false,
+            logFields.scopes.app as scopeOption,
+            'Added new person to DB',
+            // eslint-disable-next-line no-useless-concat
+            `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+        );
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
         await menash.send(config.rabbit.afterMerge, mergedRecord);
@@ -215,11 +252,18 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
     while (true) {
         try {
             await matchedRecordHandler(matchedRecord);
-        } catch (error) {
+        } catch (error: any) {
             if (error.code === 11000) {
+                logger.error(false, logFields.scopes.app as scopeOption, 'Parallel insert conflict', error.message);
                 console.log('error', error.message);
                 continue;
             } else {
+                logger.error(
+                    false,
+                    logFields.scopes.app as scopeOption,
+                    'Error inserting person',
+                    `${error.message} Person identifiers:${matchedRecord.record.identifiers}`,
+                );
                 console.log('error', error.message);
                 break;
             }

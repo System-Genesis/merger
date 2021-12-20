@@ -55,16 +55,7 @@ function getIdentifiers(record: any) {
     return ids;
 }
 function getFirstIdentifier(ids: identifiers) {
-    if (ids.identityCard) {
-        return `identityCard: ${ids.identityCard}`;
-    }
-    if (ids.personalNumber) {
-        return `personalNumber: ${ids.personalNumber}`;
-    }
-    if (ids.goalUserId) {
-        return `goalUserId: ${ids.goalUserId}`;
-    }
-    return null;
+    return ids.identityCard || ids.personalNumber || ids.goalUserId;
 }
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
@@ -97,7 +88,7 @@ export function findAndUpdateRecord(
                             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                             {
                                 id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                                uid: matchedRecord.record.userID,
+                                uniqueId: matchedRecord.record.userID,
                                 source: matchedRecord.dataSource,
                             },
                         );
@@ -117,7 +108,7 @@ export function findAndUpdateRecord(
                 `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                 {
                     id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                    uid: matchedRecord.record.userID,
+                    uniqueId: matchedRecord.record.userID,
                     source: matchedRecord.dataSource,
                 },
             );
@@ -136,7 +127,7 @@ export function findAndUpdateRecord(
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
             {
                 id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                uid: matchedRecord.record.userID,
+                uniqueId: matchedRecord.record.userID,
                 source: matchedRecord.dataSource,
             },
         );
@@ -192,7 +183,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                     {
                         id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                        uid: matchedRecord.record.userID,
+                        uniqueId: matchedRecord.record.userID,
                         source: matchedRecord.dataSource,
                     },
                 );
@@ -288,7 +279,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
             {
                 id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                uid: matchedRecord.record.userID,
+                uniqueId: matchedRecord.record.userID,
                 source: matchedRecord.dataSource,
             },
         );
@@ -317,7 +308,7 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                     {
                         id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                        uid: matchedRecord.record.userID,
+                        uniqueId: matchedRecord.record.userID,
                         source: matchedRecord.dataSource,
                     },
                 );

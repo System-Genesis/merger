@@ -26,8 +26,8 @@ export interface MatchedRecord {
     lastPing?: Date;
 }
 interface identifiers {
-    personalNumber?: string;
     identityCard?: string;
+    personalNumber?: string;
     goalUserId?: string;
 }
 interface MergedOBJ {
@@ -53,6 +53,18 @@ function getIdentifiers(record: any) {
         ids.goalUserId = record.goalUserId;
     }
     return ids;
+}
+function getFirstIdentifier(ids: identifiers) {
+    if (ids.identityCard) {
+        return ids.identityCard;
+    }
+    if (ids.personalNumber) {
+        return ids.personalNumber;
+    }
+    if (ids.goalUserId) {
+        return ids.goalUserId;
+    }
+    return null;
 }
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
@@ -83,6 +95,11 @@ export function findAndUpdateRecord(
                             logFields.scopes.app as scopeOption,
                             'Updated current record of person',
                             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                            {
+                                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                                uid: matchedRecord.record.userID,
+                                source: matchedRecord.dataSource,
+                            },
                         );
                     }
                 }
@@ -98,6 +115,11 @@ export function findAndUpdateRecord(
                 'Added new source to person (source array existed)',
                 // eslint-disable-next-line no-useless-concat
                 `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                {
+                    id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                    uid: matchedRecord.record.userID,
+                    source: matchedRecord.dataSource,
+                },
             );
         }
     } else {
@@ -112,6 +134,11 @@ export function findAndUpdateRecord(
             'Added new source to person (source array didnt exist)',
             // eslint-disable-next-line no-useless-concat
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+            {
+                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                uid: matchedRecord.record.userID,
+                source: matchedRecord.dataSource,
+            },
         );
     }
     sourceMergedRecords[0].lastPing = new Date();
@@ -163,6 +190,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     logFields.scopes.app as scopeOption,
                     'Unifying existing records',
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                    {
+                        id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                        uid: matchedRecord.record.userID,
+                        source: matchedRecord.dataSource,
+                    },
                 );
                 ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
@@ -254,6 +286,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             'Added new person to DB',
             // eslint-disable-next-line no-useless-concat
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+            {
+                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                uid: matchedRecord.record.userID,
+                source: matchedRecord.dataSource,
+            },
         );
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
@@ -278,7 +315,11 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
                     logFields.scopes.app as scopeOption,
                     'Error inserting person',
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-                    { id: JSON.stringify(getIdentifiers(matchedRecord.record))[0] },
+                    {
+                        id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                        uid: matchedRecord.record.userID,
+                        source: matchedRecord.dataSource,
+                    },
                 );
                 // console.log('error', error.message);
                 break;

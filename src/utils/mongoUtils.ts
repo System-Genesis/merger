@@ -56,13 +56,13 @@ function getIdentifiers(record: any) {
 }
 function getFirstIdentifier(ids: identifiers) {
     if (ids.identityCard) {
-        return ids.identityCard;
+        return `identityCard: ${ids.identityCard}`;
     }
     if (ids.personalNumber) {
-        return ids.personalNumber;
+        return `personalNumber: ${ids.personalNumber}`;
     }
     if (ids.goalUserId) {
-        return ids.goalUserId;
+        return `goalUserId: ${ids.goalUserId}`;
     }
     return null;
 }
@@ -96,7 +96,7 @@ export function findAndUpdateRecord(
                             'Updated current record of person',
                             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                             {
-                                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                                 uid: matchedRecord.record.userID,
                                 source: matchedRecord.dataSource,
                             },
@@ -116,7 +116,7 @@ export function findAndUpdateRecord(
                 // eslint-disable-next-line no-useless-concat
                 `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                 {
-                    id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                     uid: matchedRecord.record.userID,
                     source: matchedRecord.dataSource,
                 },
@@ -135,7 +135,7 @@ export function findAndUpdateRecord(
             // eslint-disable-next-line no-useless-concat
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
             {
-                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                 uid: matchedRecord.record.userID,
                 source: matchedRecord.dataSource,
             },
@@ -191,7 +191,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     'Unifying existing records',
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                     {
-                        id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                         uid: matchedRecord.record.userID,
                         source: matchedRecord.dataSource,
                     },
@@ -287,7 +287,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             // eslint-disable-next-line no-useless-concat
             `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
             {
-                id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                 uid: matchedRecord.record.userID,
                 source: matchedRecord.dataSource,
             },
@@ -316,7 +316,7 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
                     'Error inserting person',
                     `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
                     {
-                        id: JSON.stringify(getFirstIdentifier(getIdentifiers(matchedRecord.record))),
+                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
                         uid: matchedRecord.record.userID,
                         source: matchedRecord.dataSource,
                     },

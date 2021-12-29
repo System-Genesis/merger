@@ -31,12 +31,12 @@ interface identifiers {
     goalUserId?: string;
 }
 interface MergedOBJ {
-    aka: MatchedRecord[];
-    es: MatchedRecord[];
-    sf: MatchedRecord[];
-    adnn: MatchedRecord[];
-    city: MatchedRecord[];
-    mir: MatchedRecord[];
+    aka?: MatchedRecord[];
+    es?: MatchedRecord[];
+    sf?: MatchedRecord[];
+    adnn?: MatchedRecord[];
+    city?: MatchedRecord[];
+    mir?: MatchedRecord[];
     identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string };
     updatedAt: Date;
     lock: number;
@@ -58,7 +58,7 @@ function getFirstIdentifier(ids: identifiers) {
     return ids.identityCard || ids.personalNumber || ids.goalUserId;
 }
 export function findAndUpdateRecord(
-    sourceMergedRecords: MatchedRecord[],
+    sourceMergedRecords: MatchedRecord[] | null | undefined,
     matchedRecord: MatchedRecord,
     compareRecords: (record1, record2) => boolean,
 ): [MatchedRecord[], boolean] {
@@ -213,6 +213,23 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         switch (recordDataSource) {
             case 'aka': {
                 [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare);
+                break;
+            }
+            case 'city': {
+                if (mergedRecord.mir) {
+                    delete mergedRecord.mir;
+                }
+                [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
+                    mergedRecord[dataSourceRevert],
+                    matchedRecord,
+                    compareFunctions.userIDCompare,
+                );
+                break;
+            }
+            case 'mir': {
+                if (mergedRecord.city) {
+                    delete mergedRecord.mir;
+                }
                 break;
             }
             default: {

@@ -187,7 +187,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                         source: matchedRecord.dataSource,
                     },
                 );
-                ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
+                Object.keys(fn.dataSources).forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
                         if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
                     } else mergedObjects[0][x] = mergedObjects[i][x];
@@ -211,13 +211,25 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
         let updated: boolean = false;
         switch (recordDataSource) {
-            case 'aka': {
+            case fn.dataSources.aka: {
                 [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare);
                 break;
             }
-            case 'city': {
+            case fn.dataSources.city: {
                 if (mergedRecord.mir) {
-                    delete mergedRecord.mir;
+                    mergedRecord.mir = undefined;
+                    logger.info(
+                        false,
+                        logFields.scopes.app as scopeOption,
+                        `Removed Datasource ${fn.dataSources.mir}  after adding Datasource ${fn.dataSources.city}`,
+                        // eslint-disable-next-line no-useless-concat
+                        `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                        {
+                            id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                            uniqueId: matchedRecord.record.userID,
+                            source: matchedRecord.dataSource,
+                        },
+                    );
                 }
                 [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
                     mergedRecord[dataSourceRevert],
@@ -226,9 +238,21 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                 );
                 break;
             }
-            case 'mir': {
+            case fn.dataSources.mir: {
                 if (mergedRecord.city) {
-                    delete mergedRecord.mir;
+                    mergedRecord.mir = undefined;
+                    logger.info(
+                        false,
+                        logFields.scopes.app as scopeOption,
+                        `Not adding Datasource ${fn.dataSources.mir} because person already has a ${fn.dataSources.city} Datasource record`,
+                        // eslint-disable-next-line no-useless-concat
+                        `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                        {
+                            id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                            uniqueId: matchedRecord.record.userID,
+                            source: matchedRecord.dataSource,
+                        },
+                    );
                 }
                 break;
             }

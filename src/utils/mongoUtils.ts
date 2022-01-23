@@ -142,6 +142,7 @@ export const initializeMongo = async () => {
 };
 
 export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
+    console.log('got');
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
         identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });
@@ -154,9 +155,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     }
     // find in mongo
     const foundIdentifiers: any[] = [];
-    const mergedObjects: MergedOBJ[] = await personsDB.find({
-        $or: identifiers,
-    });
+    const mergedObjects: MergedOBJ[] = await personsDB
+        .find({
+            $or: identifiers,
+        })
+        .lean();
     // eslint-disable-next-line no-restricted-syntax
     for (const record of mergedObjects) {
         if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': record.identifiers.personalNumber });
@@ -205,6 +208,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     ? mergedObjects[0].identifiers.goalUserId
                     : mergedObjects[i].identifiers.goalUserId;
             }
+            mergedObjects[0].updatedAt = new Date();
         }
         const mergedRecord: MergedOBJ = mergedObjects[0];
         const recordDataSource: string = matchedRecord.dataSource;

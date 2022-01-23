@@ -142,7 +142,6 @@ export const initializeMongo = async () => {
 };
 
 export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
-    console.log('got');
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
         identifiers.push({ 'identifiers.personalNumber': matchedRecord.record.personalNumber });

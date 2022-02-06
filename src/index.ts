@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 import menash from 'menashmq';
 import logger from 'logger-genesis';
-import initLogger from '../logger';
+import initLogger from './utils/logger';
 import config from './config';
 import { initializeMongo, featureConsumeFunction } from './utils/mongoUtils';
 import { scopeOption } from './utils/log';

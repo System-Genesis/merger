@@ -41,6 +41,11 @@ interface MergedOBJ {
     updatedAt: Date;
     lock: number;
 }
+/**
+ *
+ * @param record the record that we want to get available identifiers from
+ * @returns the available identifiers in the record
+ */
 function getIdentifiers(record: any) {
     const ids: identifiers = {};
     if (record.personalNumber) {
@@ -54,9 +59,24 @@ function getIdentifiers(record: any) {
     }
     return ids;
 }
+/**
+ *
+ * @param ids takes in an object of identifiers (one of each kind), usually used on the "getIdentifiers" function
+ * @returns returns a valid identifier, giving priority first to id then to pn then to uid
+ */
 function getFirstIdentifier(ids: identifiers) {
     return ids.identityCard || ids.personalNumber || ids.goalUserId;
 }
+/**
+ * takes in matched record and checks if it is in sourceMergedRecords, if it is, it then checks if the matching record in sourceMergedRecords needs to be updated,
+ * if so then updates it and updates last ping and updatedAt, otherwise does nothing
+ * if the record didnt exist in sourceMergedRecords already (not even an outdated version), then the function inserts the matchedRecord
+ * into the sourceMergedRecords and updates last ping and updatedAt
+ * @param sourceMergedRecords all the records of the same source to a certain person (whats currently in mongodb)
+ * @param matchedRecord the record we want to insert into the sourceMergedRecords
+ * @param compareRecords a function that can compare between each record in sourceMergedRecords and matched record to see if they are the same record
+ * @returns
+ */
 export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[] | null | undefined,
     matchedRecord: MatchedRecord,
@@ -135,12 +155,22 @@ export function findAndUpdateRecord(
     sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
 }
-
 // eslint-disable-next-line import/prefer-default-export
 export const initializeMongo = async () => {
     await mongoose.connect(mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
 };
-
+/**
+ * the functions goal is to insert the matchedRecord into the mongo db, either as an update or as a new
+ * first we extract the identifiers found in the matchedRecord, and search the db using these identifiers.
+ * if we didnt find any records in the db matching to our matchedRecord's identifiers, then we insert it into the db as a new (the 2nd small part of this function)
+ * otherwise, if we found one record matching to our record, we check the source in the found db corrosponding to the source of matchedRecord
+ * if its empty we add it and if its not we compare and update/do nothing/add (in the function findAndUpdateRecord)
+ * if we find multiple objects in the db that have the same identifiers as the ones in matchedRecord,
+ * then we conclude that these objects belong to the same person and we merge them into one object, and replace
+ * the objects in the db with the singular merged object.
+ *
+ * @param matchedRecord A record received from basic match
+ */
 export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     const identifiers: any[] = [];
     if (matchedRecord.record.personalNumber) {
@@ -214,10 +244,13 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
         let updated: boolean = false;
         switch (recordDataSource) {
+            // seperated aka from the default case because they have different compare functions
             case fn.dataSources.aka: {
                 [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare);
                 break;
             }
+            // we dont want any object in the db to have both city and mir records, so if we receive a city record
+            // we remove the current mir record and insert the city record and vice versa
             case fn.dataSources.city: {
                 if (mergedRecord.mir) {
                     for (let i = 0; i < mergedRecord.mir.length; i += 1) {
@@ -296,6 +329,8 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         if (!mergedRecord.identifiers.goalUserId) delete mergedRecord.identifiers.goalUserId;
         if (updated) mergedRecord.updatedAt = new Date();
         mergedRecord.lock = maxLock + 1;
+        // created insert session so that the delete many and insert one operations are an atomic unit
+        // since other parallel runs on records of the same person can disrupt this process and vice versa
         const insertSession = personsDB.startSession();
         try {
             await (
@@ -308,8 +343,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         } finally {
             await (await insertSession).endSession();
         }
+        // send to next service queue
         if (updated) await menash.send(config.rabbit.afterMerge, mergedRecord); // send only if updated
     } else {
+        // code gets here if no objects in the db were found matching the identifiers of the matchedRecord
+        // so we build a new object and insert it into the db
         const mergedRecord = <MergedOBJ>{};
         const recordDataSource: string = matchedRecord.dataSource;
         if (fn.dataSourcesRevert[recordDataSource] === undefined) {
@@ -344,9 +382,16 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         );
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
+        // send to next service queue
         await menash.send(config.rabbit.afterMerge, mergedRecord);
     }
 }
+/**
+ * runs the function matchedRecordHandler on the received record, tries to insert it into the db, either to insert as new or to update.
+ * sometimes when trying to insert multiple records at the same time, we get a db error 11000, and so we try again untill it enters the db.
+ * if any other error occurs then stop the function and print the error.
+ * @param msg a message sent from basic match, containing a basic matched record
+ */
 export async function featureConsumeFunction(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
     // eslint-disable-next-line no-constant-condition

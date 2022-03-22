@@ -1,27 +1,14 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-console */
-import menash from 'menashmq';
 import logger from 'logger-genesis';
-import initLogger from './utils/logger';
-import config from './config';
-import { initializeMongo, featureConsumeFunction } from './utils/mongoUtils';
+import { initializeMongo } from './utils/mongo';
 import { scopeOption } from './utils/log';
+import fn from './config/fieldNames';
+import { initializeRabbit } from './rabbit';
 
-const fn = require('./config/fieldNames');
+require('dotenv').config();
 
 const { logFields } = fn;
-
-const { rabbit } = config;
-
-const initializeRabbit = async () => {
-    await menash.connect(rabbit.uri, rabbit.retryOptions);
-    await menash.declareQueue(rabbit.matchedRecords);
-    await menash.declareQueue(rabbit.afterMerge);
-    // await menash.declareQueue(rabbit.logQueue);
-    await initLogger();
-    await menash.queue(rabbit.matchedRecords).prefetch(rabbit.prefetch);
-    await menash.queue(rabbit.matchedRecords).activateConsumer(featureConsumeFunction, { noAck: false });
-};
 
 const main = async () => {
     await initializeRabbit();

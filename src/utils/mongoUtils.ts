@@ -4,18 +4,19 @@
 /* eslint-disable no-param-reassign */
 import * as mongoose from 'mongoose';
 import { ConsumerMessage, menash } from 'menashmq';
-// import diff from 'jest-diff';
-// import { merge } from 'lodash';
+import logger from 'logger-genesis';
 import config from '../config';
 import * as compareFunctions from './recordCompareFunctions';
 import personsDB from './models';
 import { difference } from './difference';
+import { scopeOption } from './log';
 
 const dotenv = require('dotenv');
 
 dotenv.config();
 const fn = require('../config/fieldNames');
 
+const { logFields } = fn;
 const { mongo } = config;
 export interface MatchedRecord {
     record: any;
@@ -24,20 +25,40 @@ export interface MatchedRecord {
     updatedAt?: Date;
     lastPing?: Date;
 }
-
+interface identifiers {
+    identityCard?: string;
+    personalNumber?: string;
+    goalUserId?: string;
+}
 interface MergedOBJ {
-    aka: MatchedRecord[];
-    es: MatchedRecord[];
-    sf: MatchedRecord[];
-    adnn: MatchedRecord[];
-    city: MatchedRecord[];
-    mir: MatchedRecord[];
+    aka?: MatchedRecord[];
+    es?: MatchedRecord[];
+    sf?: MatchedRecord[];
+    adnn?: MatchedRecord[];
+    city?: MatchedRecord[];
+    mir?: MatchedRecord[]; // undefined incase of having to delete records
     identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string };
     updatedAt: Date;
     lock: number;
 }
+function getIdentifiers(record: any) {
+    const ids: identifiers = {};
+    if (record.personalNumber) {
+        ids.personalNumber = record.personalNumber;
+    }
+    if (record.identityCard) {
+        ids.identityCard = record.identityCard;
+    }
+    if (record.goalUserId) {
+        ids.goalUserId = record.goalUserId;
+    }
+    return ids;
+}
+function getFirstIdentifier(ids: identifiers) {
+    return ids.identityCard || ids.personalNumber || ids.goalUserId;
+}
 export function findAndUpdateRecord(
-    sourceMergedRecords: MatchedRecord[],
+    sourceMergedRecords: MatchedRecord[] | null | undefined,
     matchedRecord: MatchedRecord,
     compareRecords: (record1, record2) => boolean,
 ): [MatchedRecord[], boolean] {
@@ -55,10 +76,22 @@ export function findAndUpdateRecord(
                 if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
                     // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
                     const diffResult = difference(mergedRecordIter.record, matchedRecord.record);
-                    if (diffResult && Object.keys(diffResult).length !== 0) {
+                    const diffResult2 = difference(matchedRecord.record, mergedRecordIter.record);
+                    if ((diffResult && Object.keys(diffResult).length !== 0) || (diffResult2 && Object.keys(diffResult2).length !== 0)) {
                         sourceMergedRecords[i] = matchedRecord;
                         sourceMergedRecords[i].updatedAt = new Date();
                         updated = true;
+                        logger.info(
+                            false,
+                            logFields.scopes.app as scopeOption,
+                            'Updated current record of person',
+                            `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                            {
+                                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                                uniqueId: matchedRecord.record.userID,
+                                source: matchedRecord.dataSource,
+                            },
+                        );
                     }
                 }
             }
@@ -67,6 +100,18 @@ export function findAndUpdateRecord(
             matchedRecord.updatedAt = new Date();
             sourceMergedRecords.push(matchedRecord);
             updated = true;
+            logger.info(
+                false,
+                logFields.scopes.app as scopeOption,
+                'Added new source to person (source array existed)',
+                // eslint-disable-next-line no-useless-concat
+                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                {
+                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                    uniqueId: matchedRecord.record.userID,
+                    source: matchedRecord.dataSource,
+                },
+            );
         }
     } else {
         // if the person has no array of merged records for this datasource, then we add it along with the matched record.
@@ -74,6 +119,18 @@ export function findAndUpdateRecord(
         sourceMergedRecords = [matchedRecord]; // does it change the original? probably not
         sourceMergedRecords[0].updatedAt = new Date();
         updated = true;
+        logger.info(
+            false,
+            logFields.scopes.app as scopeOption,
+            'Added new source to person (source array didnt exist)',
+            // eslint-disable-next-line no-useless-concat
+            `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+            {
+                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                uniqueId: matchedRecord.record.userID,
+                source: matchedRecord.dataSource,
+            },
+        );
     }
     sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
@@ -97,9 +154,11 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     }
     // find in mongo
     const foundIdentifiers: any[] = [];
-    const mergedObjects: MergedOBJ[] = await personsDB.find({
-        $or: identifiers,
-    });
+    const mergedObjects: MergedOBJ[] = await personsDB
+        .find({
+            $or: identifiers,
+        })
+        .lean();
     // eslint-disable-next-line no-restricted-syntax
     for (const record of mergedObjects) {
         if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': record.identifiers.personalNumber });
@@ -119,7 +178,18 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // by default merge into the first one in the array
         if (mergedObjects.length > 1) {
             for (let i = 1; i < mergedObjects.length; i += 1) {
-                ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
+                logger.info(
+                    true,
+                    logFields.scopes.app as scopeOption,
+                    'Unifying existing records',
+                    `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                    {
+                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                        uniqueId: matchedRecord.record.userID,
+                        source: matchedRecord.dataSource,
+                    },
+                );
+                Object.keys(fn.dataSources).forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
                         if (mergedObjects[i][x] !== undefined) mergedObjects[0][x] = [...mergedObjects[0][x], ...mergedObjects[i][x]];
                     } else mergedObjects[0][x] = mergedObjects[i][x];
@@ -137,14 +207,71 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     ? mergedObjects[0].identifiers.goalUserId
                     : mergedObjects[i].identifiers.goalUserId;
             }
+            mergedObjects[0].updatedAt = new Date();
         }
         const mergedRecord: MergedOBJ = mergedObjects[0];
         const recordDataSource: string = matchedRecord.dataSource;
         const dataSourceRevert: string = fn.dataSourcesRevert[recordDataSource];
         let updated: boolean = false;
         switch (recordDataSource) {
-            case 'aka': {
+            case fn.dataSources.aka: {
                 [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare);
+                break;
+            }
+            case fn.dataSources.city: {
+                if (mergedRecord.mir) {
+                    for (let i = 0; i < mergedRecord.mir.length; i += 1) {
+                        if (mergedRecord.mir[i].record.userID === matchedRecord.record.userID) {
+                            mergedRecord.mir.splice(i, 1);
+                            logger.info(
+                                false,
+                                logFields.scopes.app as scopeOption,
+                                `Removed Datasource ${fn.dataSources.mir} after adding Datasource ${fn.dataSources.city}`,
+                                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${
+                                    matchedRecord.dataSource
+                                }, uniqueID: ${matchedRecord.record.userID}`,
+                                {
+                                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                                    uniqueId: matchedRecord.record.userID,
+                                    source: matchedRecord.dataSource,
+                                },
+                            );
+                        }
+                    }
+                }
+                [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
+                    mergedRecord[dataSourceRevert],
+                    matchedRecord,
+                    compareFunctions.userIDCompare,
+                );
+                break;
+            }
+            case fn.dataSources.mir: {
+                if (mergedRecord.city) {
+                    for (let i = 0; i < mergedRecord.city.length; i += 1) {
+                        if (mergedRecord.city[i].record.userID === matchedRecord.record.userID) {
+                            mergedRecord.city.splice(i, 1);
+                            logger.info(
+                                false,
+                                logFields.scopes.app as scopeOption,
+                                `Removed Datasource ${fn.dataSources.city} after adding Datasource ${fn.dataSources.mir}`,
+                                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${
+                                    matchedRecord.dataSource
+                                }, uniqueID: ${matchedRecord.record.userID}`,
+                                {
+                                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                                    uniqueId: matchedRecord.record.userID,
+                                    source: matchedRecord.dataSource,
+                                },
+                            );
+                        }
+                    }
+                }
+                [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
+                    mergedRecord[dataSourceRevert],
+                    matchedRecord,
+                    compareFunctions.userIDCompare,
+                );
                 break;
             }
             default: {
@@ -203,6 +330,18 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         mergedRecord.updatedAt = new Date();
 
         mergedRecord.lock = 0;
+        logger.info(
+            false,
+            logFields.scopes.app as scopeOption,
+            'Added new person to DB',
+            // eslint-disable-next-line no-useless-concat
+            `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+            {
+                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                uniqueId: matchedRecord.record.userID,
+                source: matchedRecord.dataSource,
+            },
+        );
         // save newMergeRecord in DB
         await personsDB.collection.insertOne(mergedRecord);
         await menash.send(config.rabbit.afterMerge, mergedRecord);
@@ -214,12 +353,25 @@ export async function featureConsumeFunction(msg: ConsumerMessage) {
     while (true) {
         try {
             await matchedRecordHandler(matchedRecord);
-        } catch (error) {
+        } catch (error: any) {
             if (error.code === 11000) {
-                console.log('error', error.message);
+                // logger.error(true, logFields.scopes.app as scopeOption, 'Parallel insert conflict', error.message);
+                // console.log('error', error.message);
                 continue;
             } else {
-                console.log('error', error.message);
+                // TODO: ADD {id: identifier}  -m add identifier
+                logger.error(
+                    false,
+                    logFields.scopes.app as scopeOption,
+                    'Error inserting person',
+                    `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+                    {
+                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+                        uniqueId: matchedRecord.record.userID,
+                        source: matchedRecord.dataSource,
+                    },
+                );
+                // console.log('error', error.message);
                 break;
             }
         }

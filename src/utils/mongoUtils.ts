@@ -35,7 +35,7 @@ interface MergedOBJ {
     adnn: MatchedRecord[];
     city: MatchedRecord[];
     mir: MatchedRecord[];
-    identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string };
+    identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string; employeeId?: string };
     updatedAt: Date;
     lock: number;
 }
@@ -119,6 +119,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     if (matchedRecord.record.goalUserId) {
         identifiers.push({ 'identifiers.goalUserId': matchedRecord.record.goalUserId });
     }
+    if (matchedRecord.record.employeeId) {
+        identifiers.push({ 'identifiers.employeeId': matchedRecord.record.employeeId });
+    }
     // find in mongo
     const foundIdentifiers: any[] = [];
     const mergedObjects: MergedOBJ[] = await personsDB.find({
@@ -129,6 +132,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         if (record.identifiers.personalNumber) foundIdentifiers.push({ 'identifiers.personalNumber': record.identifiers.personalNumber });
         if (record.identifiers.identityCard) foundIdentifiers.push({ 'identifiers.identityCard': record.identifiers.identityCard });
         if (record.identifiers.goalUserId) foundIdentifiers.push({ 'identifiers.goalUserId': record.identifiers.goalUserId });
+        if (record.identifiers.employeeId) foundIdentifiers.push({ 'identifiers.employeeId': record.identifiers.employeeId });
     }
     // eslint-disable-next-line prefer-spread
     const maxLock = Math.max.apply(
@@ -166,6 +170,10 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                 mergedObjects[0].identifiers.goalUserId = mergedObjects[0].identifiers.goalUserId
                     ? mergedObjects[0].identifiers.goalUserId
                     : mergedObjects[i].identifiers.goalUserId;
+
+                mergedObjects[0].identifiers.employeeId = mergedObjects[0].identifiers.employeeId
+                    ? mergedObjects[0].identifiers.employeeId
+                    : mergedObjects[i].identifiers.employeeId;
             }
         }
         const mergedRecord: MergedOBJ = mergedObjects[0];
@@ -197,6 +205,10 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             ? mergedRecord.identifiers.goalUserId
             : matchedRecord.record.goalUserId;
         if (!mergedRecord.identifiers.goalUserId) delete mergedRecord.identifiers.goalUserId;
+        mergedRecord.identifiers.employeeId = mergedRecord.identifiers.employeeId
+            ? mergedRecord.identifiers.employeeId
+            : matchedRecord.record.employeeId;
+        if (!mergedRecord.identifiers.employeeId) delete mergedRecord.identifiers.employeeId;
         if (updated) mergedRecord.updatedAt = new Date();
         mergedRecord.lock = maxLock + 1;
         const insertSession = personsDB.startSession();
@@ -229,6 +241,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         }
         if (matchedRecord.record.goalUserId) {
             mergedRecord.identifiers.goalUserId = matchedRecord.record.goalUserId;
+        }
+        if (matchedRecord.record.employeeId) {
+            mergedRecord.identifiers.employeeId = matchedRecord.record.employeeId;
         }
         mergedRecord.updatedAt = new Date();
 

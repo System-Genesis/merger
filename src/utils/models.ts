@@ -25,6 +25,7 @@ const MergedOBJSchema = new mongoose.Schema({
         personalNumber: { type: String, unique: true, required: false, sparse: true },
         identityCard: { type: String, unique: true, required: false, sparse: true },
         goalUserId: { type: String, unique: true, required: false, sparse: true },
+        employeeId: { type: String, unique: true, required: false, sparse: true },
     },
     lock: Number,
 });
@@ -44,7 +45,7 @@ type MergedOBJ = {
     adnn: MatchedRecord[];
     city: MatchedRecord[];
     mir: MatchedRecord[];
-    identifiers: { personalNumber: string; identityCard: string; goalUserId: string };
+    identifiers: { personalNumber: string; identityCard: string; goalUserId: string; employeeId: string };
     updatedAt: Date;
     lock: number;
 };

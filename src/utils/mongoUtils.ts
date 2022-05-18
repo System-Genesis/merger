@@ -43,6 +43,7 @@ export function findAndUpdateRecord(
     sourceMergedRecords: MatchedRecord[],
     matchedRecord: MatchedRecord,
     compareRecords: (record1, record2) => boolean,
+    mergedRecord: MergedOBJ,
 ): [MatchedRecord[], boolean] {
     let updated: boolean = false;
     if (sourceMergedRecords && sourceMergedRecords.length) {
@@ -67,7 +68,7 @@ export function findAndUpdateRecord(
                             false,
                             logFields.scopes.app as scopeOption,
                             'Updated current record of person',
-                            `identifiers: ${matchedRecord.record.identifiers}`, // TODO: add source
+                            `identifiers: ${JSON.stringify(mergedRecord.identifiers)}`, // TODO: add source
                         );
                     }
                 }
@@ -82,7 +83,7 @@ export function findAndUpdateRecord(
                 logFields.scopes.app as scopeOption,
                 'Added new source to person',
                 // eslint-disable-next-line no-useless-concat
-                `identifiers: ${matchedRecord.record.identifiers}, Source: ${matchedRecord.dataSource}`,
+                `identifiers: ${JSON.stringify(mergedRecord.identifiers)}, Source: ${matchedRecord.dataSource}`,
             );
         }
     } else {
@@ -151,7 +152,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     false,
                     logFields.scopes.app as scopeOption,
                     'Unifying existing records',
-                    `${`identifiers: ${matchedRecord.record.identifiers}`}`,
+                    `${`identifiers: ${matchedRecord.record.identifiers} `}`,
                 );
                 ['aka', 'sf', 'es', 'adnn', 'city', 'mir'].forEach((x) => {
                     if (mergedObjects[0][x] !== undefined) {
@@ -182,7 +183,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         let updated: boolean = false;
         switch (recordDataSource) {
             case 'aka': {
-                [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare);
+                [mergedRecord.aka, updated] = findAndUpdateRecord(mergedRecord.aka, matchedRecord, compareFunctions.akaCompare, mergedRecord);
                 break;
             }
             default: {
@@ -190,6 +191,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
                     mergedRecord[dataSourceRevert],
                     matchedRecord,
                     compareFunctions.userIDCompare,
+                    mergedRecord,
                 );
             }
         }
@@ -253,7 +255,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             logFields.scopes.app as scopeOption,
             'Added new person to DB',
             // eslint-disable-next-line no-useless-concat
-            `${`identifiers: ${matchedRecord.record.identifiers}` + 'source:'}${matchedRecord.dataSource}`,
+            `${`identifiers: ${JSON.stringify(mergedRecord.identifiers)} ` + 'source:'}${matchedRecord.dataSource}`,
             // {id: identifier} add identifier
         );
         // save newMergeRecord in DB

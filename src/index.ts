@@ -12,12 +12,12 @@ const { logFields } = fn;
 
 const main = async () => {
     await initializeRabbit();
-    logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Rabbit', 'Initialized Rabbit');
+    logger?.info(false, logFields.scopes.system as scopeOption, 'Initialized Rabbit', 'Initialized Rabbit');
 
     await initializeMongo();
-    logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Mongo', 'Initialized Mongo');
+    logger?.info(false, logFields.scopes.system as scopeOption, 'Initialized Mongo', 'Initialized Mongo');
 
-    logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Server', 'Start');
+    logger?.info(false, logFields.scopes.system as scopeOption, 'Initialized Server', 'Start');
 };
 
 main().catch((err) => logger.error(false, logFields.scopes.system as scopeOption, 'Traking System Crash', err.message)); // change to log

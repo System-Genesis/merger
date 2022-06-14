@@ -1,17 +1,15 @@
 /* eslint-disable */
-import logger, { scopeOption } from 'logger-genesis';
 import { queryMongo } from '../types/types';
 import * as compareFunctions from './recordCompareFunctions';
 import mergeAllMergedObj from './mergeAllMergedObj';
 import { findAndUpdateRecord } from './findAndUpdateRecord';
 import fn from '../config/fieldNames';
 import { MatchedRecord, MergedOBJ } from '../types/types';
-import { prepareMongoQueryByIds, getIdentifiers, getFirstIdentifier } from './identifiersUtils';
+import { prepareMongoQueryByIds, getIdentifiers } from './identifiersUtils';
 import { sendToQueue } from '../rabbit/init';
 import { addToDb, findManyByIdentifiers } from './mongo';
 import { addNewEntity } from './newEntity';
-
-const { logFields } = fn;
+import { deleteSameRecordFromAnotherSource } from './recordsSourceConflict';
 
 /**
  * the functions goal is to insert the matchedRecord into the mongo db, either as an update or as a new
@@ -45,7 +43,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // if there was multiple "people" in the merged db that belong to the same person, the we unify them into one mergedObj
         // by default merge into the first one in the array
 
-        mergeAllMergedObj(mergedObjects, matchedRecord);
+        mergeAllMergedObj(mergedObjects);
 
         // now we have only onw merge obj
         const mergedRecord: MergedOBJ = mergedObjects[0];
@@ -59,11 +57,9 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
             deleteSameRecordFromAnotherSource(mergedRecord, matchedRecord, fn.dataSources.mir, fn.dataSources.city);
         }
 
-        [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(
-            mergedRecord[dataSourceRevert],
-            matchedRecord,
-            mergedRecord[dataSourceRevert].userId ? compareFunctions.userIDCompare : compareFunctions.akaCompare,
-        );
+        const matchFunc = dataSourceRevert != 'aka' ? compareFunctions.userIDCompare : compareFunctions.akaCompare;
+
+        [mergedRecord[dataSourceRevert], updated] = findAndUpdateRecord(mergedRecord[dataSourceRevert], matchedRecord, matchFunc);
 
         mergedRecord.identifiers = { ...getIdentifiers(mergedRecord.identifiers), ...getIdentifiers(matchedRecord.record) };
 
@@ -81,27 +77,4 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         // so we build a new object and insert it into the db
         await addNewEntity(matchedRecord);
     }
-}
-
-function deleteSameRecordFromAnotherSource(mergedRecord: MergedOBJ, matchedRecord: MatchedRecord, delSource: string, newSource: string) {
-    for (let i = 0; i < mergedRecord[delSource].length; i += 1) {
-        if (mergedRecord[delSource][i].record.userID === matchedRecord.record.userID) {
-            mergedRecord[delSource].splice(i, 1);
-            logger.info(
-                false,
-                logFields.scopes.app as scopeOption,
-                `Removed Datasource ${delSource} after adding Datasource ${newSource}`,
-                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}, uniqueID: ${
-                    matchedRecord.record.userID
-                }`,
-                {
-                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                    uniqueId: matchedRecord.record.userID,
-                    source: matchedRecord.dataSource,
-                },
-            );
-        }
-    }
-
-    if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource]; // TODO check if right ADDED
 }

@@ -46,7 +46,7 @@ export function findAndUpdateRecord(
                     //     sourceMergedRecords[i] = matchedRecord;
                     //     sourceMergedRecords[i].updatedAt = new Date();
                     //     updated = true;
-                    //     logger.info(
+                    //     logger?.info(
                     //         false,
                     //         logFields.scopes.app as scopeOption,
                     //         'Updated current record of person',
@@ -80,7 +80,7 @@ export function findAndUpdateRecord(
         sourceMergedRecords = [{ ...matchedRecord, updatedAt: new Date(), lastPing: new Date() }]; // does it change the original? probably not
 
         updated = true;
-        logger.info(
+        logger?.info(
             false,
             logFields.scopes.app as scopeOption,
             'Added new source to person (source array didnt exist)',
@@ -116,7 +116,7 @@ function deleteDuplicateRecord(
 function addNewSourceToEntity(matchedRecord: MatchedRecord, sourceMergedRecords: MatchedRecord[]) {
     matchedRecord.updatedAt = new Date();
     sourceMergedRecords.push(matchedRecord);
-    logger.info(
+    logger?.info(
         false,
         logFields.scopes.app as scopeOption,
         'Added new source to person (source array existed)',

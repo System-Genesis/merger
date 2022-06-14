@@ -8,7 +8,7 @@ const { logFields } = fn;
 export function overwriteRecord(sourceMergedRecords: MatchedRecord[], i: number, matchedRecord: MatchedRecord) {
     sourceMergedRecords[i] = { ...matchedRecord, updatedAt: new Date(), lastPing: new Date() };
 
-    logger.info(
+    logger?.info(
         false,
         logFields.scopes.app as scopeOption,
         `Updated current record of person, Source: ${matchedRecord.dataSource}`,

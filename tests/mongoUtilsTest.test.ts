@@ -1,14 +1,21 @@
+import * as dotenv from 'dotenv';
 /* eslint-disable no-console */
-import * as mongoUtils from '../utils/mongoUtils';
-import * as initializeMongo from '../utils/mongo';
-import { MatchedRecord } from '../types/types';
-import personsDB from '../utils/models';
+import * as mongoUtils from '../src/utils/mongoUtils';
+import { MatchedRecord } from '../src/types/types';
+import personsDB from '../src/utils/models';
 
-const dotenv = require('dotenv');
-
+import { initializeMongo } from '../src/utils/mongo';
 dotenv.config();
-initializeMongo.initializeMongo();
-jest.setTimeout(30000);
+
+jest.mock('logger-genesis');
+jest.mock('../src/rabbit/init.ts', () => ({
+    sendToQueue: () => {},
+}));
+
+initializeMongo();
+
+jest.setTimeout(300000);
+
 test('merges record from aka and record from es', async () => {
     // const found2 = await personsDB.find({}).exec();
     // console.log(found2);
@@ -95,7 +102,8 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
         updatedAt: new Date(),
         lastPing: new Date(),
     };
-    const matchedRecordads: MatchedRecord = {
+
+    const matchedRecordadNN: MatchedRecord = {
         record: {
             job: 'Liaison - Forward Creative Supervisor',
             identityCard: '5114592',
@@ -110,9 +118,31 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
             hierarchy: 'wallmart/consequatur/est/omnis',
             userID: 'Bogisich_Tianna',
             mail: 'Tianna_Bogisich@jello.com',
-            source: 'ads_name',
+            source: 'adNN_name',
         },
-        dataSource: 'ads_name',
+        dataSource: 'adNN_name',
+        runUID: '',
+        updatedAt: new Date(),
+        lastPing: new Date(),
+    };
+    const matchedRecordadNN2: MatchedRecord = {
+        record: {
+            job: 'Liaison - Forward Creative Supervisor',
+            identityCard: '5114592',
+            lastName: 'Bogisich',
+            firstName: 'Tianna',
+            entityType: 'agumon',
+            rank: 'champion',
+            dischargeDay: '2023-12-22T04:47:41.597Z',
+            sex: 'ז',
+            phone: '9225',
+            mobilePhone: '54-1178941',
+            hierarchy: 'wallmart/consequatur/est/omnis',
+            userID: 'Bogi2sich_Tianna',
+            mail: 'Tianna_Bogisich@jello.com',
+            source: 'adNN_name',
+        },
+        dataSource: 'adNN_name',
         runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
@@ -142,12 +172,14 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
     };
     await mongoUtils.matchedRecordHandler(matchedRecordes);
     // console.log('MATCHED ES NOW TO MATCH ADS');
-    await mongoUtils.matchedRecordHandler(matchedRecordads);
+    await mongoUtils.matchedRecordHandler(matchedRecordadNN);
+    await mongoUtils.matchedRecordHandler(matchedRecordadNN2);
     const foundBeforeLink = await personsDB.find({}).exec();
 
     // console.log('foundBeforeLink');
     // console.log(foundBeforeLink);
     expect(foundBeforeLink.length).toEqual(2);
+    expect(foundBeforeLink[1]['_doc'].adNN.length).toEqual(2);
     await mongoUtils.matchedRecordHandler(matchedRecordaka);
     const foundAfterLink = await personsDB
         .find({
@@ -160,6 +192,7 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
         })
         .exec();
     expect(foundAfterLink.length).toEqual(1);
+    expect(foundAfterLink[0]['_doc'].adNN.length).toEqual(2);
 });
 test('adding 4th record to the first 3', async () => {
     await personsDB.deleteMany({});
@@ -185,7 +218,7 @@ test('adding 4th record to the first 3', async () => {
         updatedAt: new Date(),
         lastPing: new Date(),
     };
-    const matchedRecordads: MatchedRecord = {
+    const matchedRecordadNN: MatchedRecord = {
         record: {
             job: 'Liaison - Forward Creative Supervisor',
             identityCard: '5114592',
@@ -200,9 +233,9 @@ test('adding 4th record to the first 3', async () => {
             hierarchy: 'wallmart/consequatur/est/omnis',
             userID: 'Bogisich_Tianna',
             mail: 'Tianna_Bogisich@jello.com',
-            source: 'ads_name',
+            source: 'adNN_name',
         },
-        dataSource: 'ads_name',
+        dataSource: 'adNN_name',
         runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
@@ -253,7 +286,7 @@ test('adding 4th record to the first 3', async () => {
         lastPing: new Date(),
     };
     await mongoUtils.matchedRecordHandler(matchedRecordes);
-    await mongoUtils.matchedRecordHandler(matchedRecordads);
+    await mongoUtils.matchedRecordHandler(matchedRecordadNN);
     await mongoUtils.matchedRecordHandler(matchedRecordaka);
     await mongoUtils.matchedRecordHandler(matchedRecordsf);
 

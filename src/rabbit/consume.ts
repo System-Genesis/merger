@@ -3,7 +3,7 @@ import { ConsumerMessage } from 'menashmq';
 import logger, { scopeOption } from 'logger-genesis';
 import { MatchedRecord } from '../types/types';
 import { getIdentifiers, getFirstIdentifier } from '../utils/identifiersUtils';
-import { matchedRecordHandler } from '../utils/mongoUtils';
+import { matchedRecordHandler } from '../utils/margeHndler';
 import fn from '../config/fieldNames';
 
 const { logFields } = fn;

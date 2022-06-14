@@ -15,12 +15,15 @@ export async function addNewEntity(matchedRecord: MatchedRecord) {
     }
     matchedRecord.updatedAt = new Date();
     mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
-    mergedRecord.identifiers = { ...getIdentifiers(mergedRecord.identifiers), ...getIdentifiers(matchedRecord.record) };
+    mergedRecord.identifiers = {
+        ...(!mergedRecord.identifiers ? {} : getIdentifiers(mergedRecord.identifiers)),
+        ...getIdentifiers(matchedRecord.record),
+    };
 
     mergedRecord.updatedAt = new Date();
 
     mergedRecord.lock = 0;
-    logger.info(
+    logger?.info(
         false,
         logFields.scopes.app as scopeOption,
         'Added new person to DB',

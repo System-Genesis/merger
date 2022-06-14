@@ -3,7 +3,7 @@ replicaCount: 1
 
 images:
   PullSecrets: 
-    name: kartingreg
+    name: kartoffelreg
   repository: genesisproject.azurecr.io/merger
   tag: "latest"
 

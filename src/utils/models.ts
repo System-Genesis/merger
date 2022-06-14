@@ -49,4 +49,5 @@ type MergedOBJ = {
     updatedAt: Date;
     lock: number;
 };
+
 export default mongoose.model<MergedOBJ>(config.mongo.dataCollectionName, MergedOBJSchema);

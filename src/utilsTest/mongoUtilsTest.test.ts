@@ -65,6 +65,7 @@ test('merges record from aka and record from es', async () => {
                 { 'identifiers.personalNumber': matchedRecordes.record.personalNumber },
                 { 'identifiers.identityCard': matchedRecordes.record.identityCard },
                 { 'identifiers.goalUserId': matchedRecordes.record.goalUserId },
+                { 'identifiers.employeeId': matchedRecordes.record.employeeId },
             ],
         })
         .exec();
@@ -154,6 +155,7 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
                 { 'identifiers.personalNumber': matchedRecordes.record.personalNumber },
                 { 'identifiers.identityCard': matchedRecordes.record.identityCard },
                 { 'identifiers.goalUserId': matchedRecordes.record.goalUserId },
+                { 'identifiers.employeeId': matchedRecordes.record.employeeId },
             ],
         })
         .exec();

@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-console */
+
 import logger from 'logger-genesis';
 import { initializeMongo } from './utils/mongo';
 import { scopeOption } from './utils/log';

@@ -4,21 +4,37 @@ export interface basicMatchType {
     personalNumber?: string;
     identityCard?: string;
     goalUserId?: string;
+    employeeId?: string;
     userID?: string;
+    job: string;
+    lastName: string;
+    firstName: string;
+    entityType: string;
+    rank: string;
+    dischargeDay: string;
+    sex: string;
+    phone: string;
+    mobilePhone: string;
+    hierarchy: string;
+    mail: string;
+    source: string;
 }
 
 export interface MatchedRecord {
-    record: any;
+    record: basicMatchType;
     dataSource: string;
-    timeStamp: string;
+    runUID: string;
     updatedAt?: Date;
     lastPing?: Date;
 }
+
 export interface identifiersType {
     identityCard?: string;
     personalNumber?: string;
     goalUserId?: string;
+    employeeId?: string;
 }
+
 export interface MergedOBJ {
     aka?: MatchedRecord[];
     es?: MatchedRecord[];
@@ -26,7 +42,7 @@ export interface MergedOBJ {
     adnn?: MatchedRecord[];
     city?: MatchedRecord[];
     mir?: MatchedRecord[]; // undefined incase of having to delete records
-    identifiers: { personalNumber?: string; identityCard?: string; goalUserId?: string };
+    identifiers: identifiersType;
     updatedAt: Date;
     lock: number;
 }

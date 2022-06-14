@@ -1,8 +1,8 @@
 import menash from 'menashmq';
-import initLogger from './utils/logger';
-import { consumeMerger } from './utils/mongoUtils';
-import config from './config';
-import { MergedOBJ } from './utils/types';
+import initLogger from '../logger';
+import { consumeMerger } from './consume';
+import config from '../config';
+import { MergedOBJ } from '../types/types';
 
 const { rabbit } = config;
 export const initializeRabbit = async () => {

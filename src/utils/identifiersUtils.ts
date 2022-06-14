@@ -1,4 +1,4 @@
-import { basicMatchType, queryMongo, identifiersType } from './types';
+import { basicMatchType, queryMongo, identifiersType } from '../types/types';
 
 /**
  *
@@ -16,6 +16,9 @@ export function getIdentifiers(record: identifiersType) {
     if (record.goalUserId) {
         ids.goalUserId = record.goalUserId;
     }
+    if (record.employeeId) {
+        ids.employeeId = record.employeeId;
+    }
     return ids;
 }
 /**
@@ -24,14 +27,14 @@ export function getIdentifiers(record: identifiersType) {
  * @returns returns a valid identifier, giving priority first to id then to pn then to uid
  */
 export function getFirstIdentifier(ids: identifiersType) {
-    return ids.identityCard || ids.personalNumber || ids.goalUserId;
+    return ids.identityCard || ids.personalNumber || ids.goalUserId || ids.employeeId;
 }
 /**
  * get all identifiers and prepare for $or in mongo
  * @param record with identifier
  * @returns [ { 'identifiers.personalNumber': 4578456 }, { 'identifiers.identityCard': 124578452 }, { 'identifiers.goalUserId': 'a@a.a'}]
  */
-export function prepareMongoQueryByIds(record: basicMatchType) {
+export function prepareMongoQueryByIds(record: basicMatchType | identifiersType) {
     // prepare to mongo GET QUERY
     const identifiers: queryMongo = [];
     if (record.personalNumber) identifiers.push({ 'identifiers.personalNumber': record.personalNumber });
@@ -39,6 +42,8 @@ export function prepareMongoQueryByIds(record: basicMatchType) {
     if (record.identityCard) identifiers.push({ 'identifiers.identityCard': record.identityCard });
 
     if (record.goalUserId) identifiers.push({ 'identifiers.goalUserId': record.goalUserId });
+
+    if (record.employeeId) identifiers.push({ 'identifiers.employeeId': record.employeeId });
 
     return identifiers;
 }

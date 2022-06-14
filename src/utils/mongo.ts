@@ -1,7 +1,7 @@
 /* eslint-disable  */
 import * as mongoose from 'mongoose';
 import config from '../config';
-import { MergedOBJ, queryMongo } from './types';
+import { MergedOBJ, queryMongo } from '../types/types';
 import personsDB from './models';
 
 export const initializeMongo = async () => {

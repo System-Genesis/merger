@@ -1,11 +1,9 @@
-/* eslint-disable  */
-import logger from 'logger-genesis';
-// import { difference } from './difference';
-import { scopeOption } from './log';
+import logger, { scopeOption } from 'logger-genesis';
 import { getIdentifiers, getFirstIdentifier } from './identifiersUtils';
-import { MatchedRecord } from './types';
+import { MatchedRecord } from '../types/types';
+import { overwriteRecord } from './overwriteRecord';
 
-const fn = require('../config/fieldNames');
+import fn from '../config/fieldNames';
 
 const { logFields } = fn;
 /**
@@ -32,27 +30,13 @@ export function findAndUpdateRecord(
         // if record found in the merged records, then we check for updates and update necessarily
         if (matchingSourceMergedRecords.length) {
             // check for update/diff
-            for (let i = 0; i < sourceMergedRecords.length; i += 1) {
+            for (let i = 0; i < sourceMergedRecords.length; i++) {
                 const mergedRecordIter = sourceMergedRecords[i];
 
                 if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
-                    for (const k of Object.keys(mergedRecordIter.record)) {
-                        if (mergedRecordIter.record[k] != matchedRecord.record[k]) {
-                            sourceMergedRecords[i] = matchedRecord;
-                            sourceMergedRecords[i].updatedAt = new Date();
-                            logger.info(
-                                false,
-                                logFields.scopes.app as scopeOption,
-                                'Updated current record of person',
-                                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-                                {
-                                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                                    uniqueId: matchedRecord.record.userID,
-                                    source: matchedRecord.dataSource,
-                                },
-                            );
-                            break;
-                        }
+                    if (diff(mergedRecordIter, matchedRecord)) {
+                        overwriteRecord(sourceMergedRecords, i, matchedRecord);
+                        updated = true;
                     }
 
                     // if (JSON.stringify(mergedRecordIter.record) !== JSON.stringify(matchedRecord.record)) {
@@ -77,31 +61,24 @@ export function findAndUpdateRecord(
                 }
             }
 
+            if (matchingSourceMergedRecords.length > 1) {
+                // after all needed overwriteRecord
+                // delete all duplicates
+                deleteDuplicateRecord(sourceMergedRecords, compareRecords, matchedRecord);
+            }
+
             // new record in source
         } else {
             // if it wasnt already in the merged records then we add it to there
-            matchedRecord.updatedAt = new Date();
-            sourceMergedRecords.push(matchedRecord);
+            addNewSourceToEntity(matchedRecord, sourceMergedRecords);
             updated = true;
-            logger.info(
-                false,
-                logFields.scopes.app as scopeOption,
-                'Added new source to person (source array existed)',
-                // eslint-disable-next-line no-useless-concat
-                `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-                {
-                    id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                    uniqueId: matchedRecord.record.userID,
-                    source: matchedRecord.dataSource,
-                },
-            );
         }
         // new source
     } else {
         // if the person has no array of merged records for this datasource, then we add it along with the matched record.
         // eslint-disable-next-line no-param-reassign
-        sourceMergedRecords = [matchedRecord]; // does it change the original? probably not
-        sourceMergedRecords[0].updatedAt = new Date();
+        sourceMergedRecords = [{ ...matchedRecord, updatedAt: new Date(), lastPing: new Date() }]; // does it change the original? probably not
+
         updated = true;
         logger.info(
             false,
@@ -119,4 +96,49 @@ export function findAndUpdateRecord(
     // TODO: why is only first object get the last ping
     sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
+}
+
+function deleteDuplicateRecord(
+    sourceMergedRecords: MatchedRecord[],
+    compareRecords: (record1: any, record2: any) => boolean,
+    matchedRecord: MatchedRecord,
+) {
+    let mergedRecordLeft: MatchedRecord | undefined;
+    for (let i = 0; i < sourceMergedRecords.length; i++) {
+        if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
+            mergedRecordLeft = sourceMergedRecords.splice(i, 1)[0];
+        }
+    }
+
+    if (mergedRecordLeft) sourceMergedRecords.push(mergedRecordLeft);
+}
+
+function addNewSourceToEntity(matchedRecord: MatchedRecord, sourceMergedRecords: MatchedRecord[]) {
+    matchedRecord.updatedAt = new Date();
+    sourceMergedRecords.push(matchedRecord);
+    logger.info(
+        false,
+        logFields.scopes.app as scopeOption,
+        'Added new source to person (source array existed)',
+        // eslint-disable-next-line no-useless-concat
+        `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
+        {
+            id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
+            uniqueId: matchedRecord.record.userID,
+            source: matchedRecord.dataSource,
+        },
+    );
+}
+
+function diff(mergedRecordIter, matchedRecord) {
+    if (Object.keys(mergedRecordIter.record).length !== Object.keys(matchedRecord.record).length) {
+        return true;
+    }
+
+    for (const key of Object.keys(mergedRecordIter.record)) {
+        if (mergedRecordIter.record[key] != matchedRecord.record[key]) {
+            return true;
+        }
+    }
+    return false;
 }

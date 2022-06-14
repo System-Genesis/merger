@@ -1,11 +1,10 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-console */
 
-import logger from 'logger-genesis';
+import logger, { scopeOption } from 'logger-genesis';
 import { initializeMongo } from './utils/mongo';
-import { scopeOption } from './utils/log';
 import fn from './config/fieldNames';
-import { initializeRabbit } from './rabbit';
+import { initializeRabbit } from './rabbit/init';
 
 require('dotenv').config();
 

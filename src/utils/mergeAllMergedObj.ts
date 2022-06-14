@@ -1,7 +1,6 @@
-import logger from 'logger-genesis';
-import { scopeOption } from './log';
+import logger, { scopeOption } from 'logger-genesis';
 import { getIdentifiers, getFirstIdentifier } from './identifiersUtils';
-import { MergedOBJ, MatchedRecord } from './types';
+import { MergedOBJ, MatchedRecord } from '../types/types';
 
 const fn = require('../config/fieldNames');
 

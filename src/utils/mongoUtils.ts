@@ -1,18 +1,18 @@
 /* eslint-disable */
-import { ConsumerMessage } from 'menashmq';
-import logger from 'logger-genesis';
-import { queryMongo } from './types';
+import logger, { scopeOption } from 'logger-genesis';
+import { queryMongo } from '../types/types';
 import * as compareFunctions from './recordCompareFunctions';
-import { scopeOption } from './log';
 import mergeAllMergedObj from './mergeAllMergedObj';
 import { findAndUpdateRecord } from './findAndUpdateRecord';
 import fn from '../config/fieldNames';
-import { MatchedRecord, MergedOBJ } from './types';
+import { MatchedRecord, MergedOBJ } from '../types/types';
 import { prepareMongoQueryByIds, getIdentifiers, getFirstIdentifier } from './identifiersUtils';
-import { sendToQueue } from '../rabbit';
-import { addToDb, findManyByIdentifiers, insertOne } from './mongo';
+import { sendToQueue } from '../rabbit/init';
+import { addToDb, findManyByIdentifiers } from './mongo';
+import { addNewEntity } from './newEntity';
 
 const { logFields } = fn;
+
 /**
  * the functions goal is to insert the matchedRecord into the mongo db, either as an update or as a new
  * first we extract the identifiers found in the matchedRecord, and search the db using these identifiers.
@@ -38,7 +38,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
         [],
     );
 
-    const maxLock = Math.max(...mergedObjects.map((o: MergedOBJ) => o.lock)); // to set the max lock on the new or updated object
+    const maxLock = Math.max(...mergedObjects.map(({ lock }: MergedOBJ) => lock)); // to set the max lock on the new or updated object
 
     // update and merge all existing merged objects
     if (mergedObjects?.length >= 1) {
@@ -79,41 +79,7 @@ export async function matchedRecordHandler(matchedRecord: MatchedRecord) {
     } /** create new */ else {
         // code gets here if no objects in the db were found matching the identifiers of the matchedRecord
         // so we build a new object and insert it into the db
-        const mergedRecord = <MergedOBJ>{};
-        const recordDataSource: string = matchedRecord.dataSource;
-        if (fn.dataSourcesRevert[recordDataSource] === undefined) {
-            // error that not right source
-        }
-        matchedRecord.updatedAt = new Date();
-        mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
-        mergedRecord.identifiers = {};
-        if (matchedRecord.record.personalNumber) {
-            mergedRecord.identifiers.personalNumber = matchedRecord.record.personalNumber;
-        }
-        if (matchedRecord.record.identityCard) {
-            mergedRecord.identifiers.identityCard = matchedRecord.record.identityCard;
-        }
-        if (matchedRecord.record.goalUserId) {
-            mergedRecord.identifiers.goalUserId = matchedRecord.record.goalUserId;
-        }
-        mergedRecord.updatedAt = new Date();
-
-        mergedRecord.lock = 0;
-        logger.info(
-            false,
-            logFields.scopes.app as scopeOption,
-            'Added new person to DB',
-            `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-            {
-                id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                uniqueId: matchedRecord.record.userID,
-                source: matchedRecord.dataSource,
-            },
-        );
-        // save newMergeRecord in DB
-        await insertOne(mergedRecord);
-        // send to next service queue
-        await sendToQueue(mergedRecord);
+        await addNewEntity(matchedRecord);
     }
 }
 
@@ -138,43 +104,4 @@ function deleteSameRecordFromAnotherSource(mergedRecord: MergedOBJ, matchedRecor
     }
 
     if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource]; // TODO check if right ADDED
-}
-
-/**
- * runs the function matchedRecordHandler on the received record, tries to insert it into the db, either to insert as new or to update.
- * sometimes when trying to insert multiple records at the same time, we get a db error 11000, and so we try again untill it enters the db.
- * if any other error occurs then stop the function and print the error.
- * @param msg a message sent from basic match, containing a basic matched record
- */
-// TODO basicMatch
-export async function consumeMerger(msg: ConsumerMessage) {
-    const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
-    while (true) {
-        try {
-            await matchedRecordHandler(matchedRecord);
-        } catch (error: any) {
-            if (error.code === 11000) {
-                // logger.error(true, logFields.scopes.app as scopeOption, 'Parallel insert conflict', error.message);
-                // console.log('error', error.message);
-                continue;
-            } else {
-                // TODO: ADD {id: identifier}  -m add identifier
-                logger.error(
-                    false,
-                    logFields.scopes.app as scopeOption,
-                    'Error inserting person',
-                    `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-                    {
-                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                        uniqueId: matchedRecord.record.userID,
-                        source: matchedRecord.dataSource,
-                    },
-                );
-                // console.log('error', error.message);
-                break;
-            }
-        }
-        break;
-    }
-    msg.ack();
 }

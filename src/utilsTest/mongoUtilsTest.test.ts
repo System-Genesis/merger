@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import * as mongoUtils from '../utils/mongoUtils';
 import * as initializeMongo from '../utils/mongo';
-import { MatchedRecord } from '../utils/types';
+import { MatchedRecord } from '../types/types';
 import personsDB from '../utils/models';
 
 const dotenv = require('dotenv');
@@ -31,7 +31,7 @@ test('merges record from aka and record from es', async () => {
             source: 'es_name',
         },
         dataSource: 'es_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -53,7 +53,7 @@ test('merges record from aka and record from es', async () => {
             source: 'aka',
         },
         dataSource: 'aka',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -91,7 +91,7 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
             source: 'es_name',
         },
         dataSource: 'es_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -113,7 +113,7 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
             source: 'ads_name',
         },
         dataSource: 'ads_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -136,7 +136,7 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
             source: 'aka',
         },
         dataSource: 'aka',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -181,7 +181,7 @@ test('adding 4th record to the first 3', async () => {
             source: 'es_name',
         },
         dataSource: 'es_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -203,7 +203,7 @@ test('adding 4th record to the first 3', async () => {
             source: 'ads_name',
         },
         dataSource: 'ads_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -226,7 +226,7 @@ test('adding 4th record to the first 3', async () => {
             source: 'aka',
         },
         dataSource: 'aka',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };
@@ -248,7 +248,7 @@ test('adding 4th record to the first 3', async () => {
             source: 'sf_name',
         },
         dataSource: 'sf_name',
-        timeStamp: '',
+        runUID: '',
         updatedAt: new Date(),
         lastPing: new Date(),
     };

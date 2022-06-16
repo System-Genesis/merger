@@ -1,10 +1,8 @@
 import * as dotenv from 'dotenv';
-/* eslint-disable no-console */
-import * as mongoUtils from '../src/utils/mongoUtils';
 import { MatchedRecord } from '../src/types/types';
-import personsDB from '../src/utils/models';
-
-import { initializeMongo } from '../src/utils/mongo';
+import personsDB from '../src/mongo/models';
+import { matchedRecordHandler } from '../src/service/margeHandler';
+import { initializeMongo } from '../src/mongo/init';
 dotenv.config();
 
 jest.mock('logger-genesis');
@@ -14,7 +12,7 @@ jest.mock('../src/rabbit/init.ts', () => ({
 
 initializeMongo();
 
-jest.setTimeout(300000);
+jest.setTimeout(30000);
 
 test('merges record from aka and record from es', async () => {
     // const found2 = await personsDB.find({}).exec();
@@ -64,8 +62,8 @@ test('merges record from aka and record from es', async () => {
         updatedAt: new Date(),
         lastPing: new Date(),
     };
-    await mongoUtils.matchedRecordHandler(matchedRecordes);
-    await mongoUtils.matchedRecordHandler(matchedRecordaka);
+    await matchedRecordHandler(matchedRecordes);
+    await matchedRecordHandler(matchedRecordaka);
     const found = await personsDB
         .find({
             $or: [
@@ -170,17 +168,17 @@ test('merges 2 unrelated records after adding a 3rd record that links them toget
         updatedAt: new Date(),
         lastPing: new Date(),
     };
-    await mongoUtils.matchedRecordHandler(matchedRecordes);
+    await matchedRecordHandler(matchedRecordes);
     // console.log('MATCHED ES NOW TO MATCH ADS');
-    await mongoUtils.matchedRecordHandler(matchedRecordadNN);
-    await mongoUtils.matchedRecordHandler(matchedRecordadNN2);
+    await matchedRecordHandler(matchedRecordadNN);
+    await matchedRecordHandler(matchedRecordadNN2);
     const foundBeforeLink = await personsDB.find({}).exec();
 
     // console.log('foundBeforeLink');
     // console.log(foundBeforeLink);
     expect(foundBeforeLink.length).toEqual(2);
-    expect(foundBeforeLink[1]['_doc'].adNN.length).toEqual(2);
-    await mongoUtils.matchedRecordHandler(matchedRecordaka);
+    expect(foundBeforeLink[1]['_doc']?.adNN?.length).toEqual(2);
+    await matchedRecordHandler(matchedRecordaka);
     const foundAfterLink = await personsDB
         .find({
             $or: [
@@ -285,10 +283,10 @@ test('adding 4th record to the first 3', async () => {
         updatedAt: new Date(),
         lastPing: new Date(),
     };
-    await mongoUtils.matchedRecordHandler(matchedRecordes);
-    await mongoUtils.matchedRecordHandler(matchedRecordadNN);
-    await mongoUtils.matchedRecordHandler(matchedRecordaka);
-    await mongoUtils.matchedRecordHandler(matchedRecordsf);
+    await matchedRecordHandler(matchedRecordes);
+    await matchedRecordHandler(matchedRecordadNN);
+    await matchedRecordHandler(matchedRecordaka);
+    await matchedRecordHandler(matchedRecordsf);
 
     const resultPerson = await personsDB.find({}).exec();
 

@@ -1,12 +1,5 @@
-/* eslint-disable  */
-import * as mongoose from 'mongoose';
-import config from '../config';
 import { MergedOBJ, queryMongo } from '../types/types';
 import personsDB from './models';
-
-export const initializeMongo = async () => {
-    await mongoose.connect(config.mongo.uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true });
-};
 
 export async function addToDb(foundIdentifiers: queryMongo, mergedRecord: MergedOBJ) {
     const insertSession = personsDB.startSession();
@@ -14,8 +7,8 @@ export async function addToDb(foundIdentifiers: queryMongo, mergedRecord: Merged
         await (
             await insertSession
         ).withTransaction(async () => {
-            await personsDB.collection.deleteMany({ $and: [{ $or: foundIdentifiers }, { lock: { $lte: mergedRecord.lock } }] });
-            await personsDB.collection.insertOne(mergedRecord);
+            await personsDB.deleteMany({ $and: [{ $or: foundIdentifiers }, { lock: { $lte: mergedRecord.lock } }] });
+            await personsDB.create(mergedRecord);
             await (await insertSession).commitTransaction();
         });
 
@@ -30,5 +23,5 @@ export const findManyByIdentifiers = async (identifiers: queryMongo) => {
 };
 
 export const insertOne = async (mergedRecord: MergedOBJ) => {
-    return await personsDB.collection.insertOne(mergedRecord);
+    return await personsDB.create(mergedRecord);
 };

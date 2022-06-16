@@ -1,12 +1,10 @@
 /* eslint-disable */
 import { ConsumerMessage } from 'menashmq';
-import logger, { scopeOption } from 'logger-genesis';
 import { MatchedRecord } from '../types/types';
-import { getIdentifiers, getFirstIdentifier } from '../utils/identifiersUtils';
-import { matchedRecordHandler } from '../utils/margeHndler';
-import fn from '../config/fieldNames';
+import { matchedRecordHandler } from '../service/margeHandler';
+import * as logs from '../logger/logs';
 
-const { logFields } = fn;
+const DUPLICATE_ERROR_CODE = 11000;
 
 /**
  * runs the function matchedRecordHandler on the received record, tries to insert it into the db, either to insert as new or to update.
@@ -16,26 +14,17 @@ const { logFields } = fn;
  */
 export async function consumeMerger(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
+
     while (true) {
         try {
             await matchedRecordHandler(matchedRecord);
         } catch (error: any) {
-            if (error.code === 11000) {
-                logger.error(true, logFields.scopes.app as scopeOption, 'Parallel insert conflict', error.message);
+            if (error.code === DUPLICATE_ERROR_CODE) {
+                logs.conflictDB(error);
                 console.log('error', error.message);
                 continue;
             } else {
-                logger.error(
-                    false,
-                    logFields.scopes.app as scopeOption,
-                    'Error inserting person',
-                    `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
-                    {
-                        id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-                        uniqueId: matchedRecord.record.userID,
-                        source: matchedRecord.dataSource,
-                    },
-                );
+                logs.failToAddNewEntity(matchedRecord);
                 console.log('error', error.message);
                 break;
             }

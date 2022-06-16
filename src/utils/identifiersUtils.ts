@@ -5,22 +5,15 @@ import { basicMatchType, queryMongo, identifiersType } from '../types/types';
  * @param record the record that we want to get available identifiers from
  * @returns the available identifiers in the record
  */
-export function getIdentifiers(record: identifiersType) {
-    const ids: identifiersType = {};
-    if (record.personalNumber) {
-        ids.personalNumber = record.personalNumber;
-    }
-    if (record.identityCard) {
-        ids.identityCard = record.identityCard;
-    }
-    if (record.goalUserId) {
-        ids.goalUserId = record.goalUserId;
-    }
-    if (record.employeeId) {
-        ids.employeeId = record.employeeId;
-    }
-    return ids;
+export function getIdentifiers(record: identifiersType): identifiersType {
+    return {
+        ...(record.personalNumber ? { personalNumber: record.personalNumber } : undefined),
+        ...(record.identityCard ? { identityCard: record.identityCard } : undefined),
+        ...(record.goalUserId ? { goalUserId: record.goalUserId } : undefined),
+        ...(record.employeeId ? { employeeId: record.employeeId } : undefined),
+    };
 }
+
 /**
  *
  * @param ids takes in an object of identifiers (one of each kind), usually used on the "getIdentifiers" function
@@ -34,9 +27,10 @@ export function getFirstIdentifier(ids: identifiersType) {
  * @param record with identifier
  * @returns [ { 'identifiers.personalNumber': 4578456 }, { 'identifiers.identityCard': 124578452 }, { 'identifiers.goalUserId': 'a@a.a'}]
  */
-export function prepareMongoQueryByIds(record: basicMatchType | identifiersType) {
+export function mongoQueryByIds(record: basicMatchType | identifiersType): queryMongo {
     // prepare to mongo GET QUERY
     const identifiers: queryMongo = [];
+
     if (record.personalNumber) identifiers.push({ 'identifiers.personalNumber': record.personalNumber });
 
     if (record.identityCard) identifiers.push({ 'identifiers.identityCard': record.identityCard });

@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import config from '../config/index';
 import { MergedOBJ } from '../types/types';
 
@@ -8,7 +8,7 @@ const MergedOBJSchema = new mongoose.Schema({
     es: { type: [], require: false, default: undefined },
     sf: { type: [], require: false, default: undefined },
     city: { type: [], require: false, default: undefined },
-    adnn: { type: [], require: false, default: undefined },
+    adNN: { type: [], require: false, default: undefined },
     mir: { type: [], require: false, default: undefined },
     identifiers: {
         personalNumber: { type: String, unique: true, required: false, sparse: true },

@@ -1,5 +1,3 @@
-// TODO basicMatch type
-
 export interface basicMatchType {
     personalNumber?: string;
     identityCard?: string;
@@ -47,4 +45,11 @@ export interface MergedOBJ {
     lock: number;
 }
 
-export type queryMongo = { [keys: string]: string }[];
+export type queryMongo = {
+    'identifiers.identityCard'?: string;
+    'identifiers.personalNumber'?: string;
+    'identifiers.goalUserId'?: string;
+    'identifiers.employeeId'?: string;
+}[];
+
+export type CompareRecordsFunc = (record1: basicMatchType, record2: basicMatchType) => boolean;

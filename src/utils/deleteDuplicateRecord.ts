@@ -6,6 +6,7 @@ export function deleteDuplicateRecord(sourceMergedRecords: MatchedRecord[], comp
     for (let i = 0; i < sourceMergedRecords.length; i++) {
         if (compareRecords(sourceMergedRecords[i].record, matchedRecord.record)) {
             mergedRecordLeft = sourceMergedRecords.splice(i, 1)[0];
+            i--;
         }
     }
 

@@ -5,22 +5,22 @@ import { sendToQueue } from '../rabbit/init';
 import { insertOne } from '../mongo/repo';
 import * as logs from '../logger/logs';
 
-export async function addNewEntity(matchedRecord: MatchedRecord) {
-    const mergedRecord = <MergedOBJ>{};
-    const recordDataSource: string = matchedRecord.dataSource;
+export async function addNewEntity(newRecord: MatchedRecord) {
+    const recordDataSource: string = newRecord.dataSource;
 
     if (fn.dataSourcesRevert[recordDataSource] === undefined) {
         // error that not right source
         // TODO add log
+        throw Error(`${recordDataSource} not recognize in merger dataSourcesRevert:${fn.dataSourcesRevert[recordDataSource]}`);
     }
+    const now = new Date();
 
-    matchedRecord.updatedAt = new Date();
-    matchedRecord.lastPing = new Date();
-
-    mergedRecord[fn.dataSourcesRevert[recordDataSource]] = [matchedRecord];
-    mergedRecord.identifiers = getIdentifiers(matchedRecord.record);
-    mergedRecord.updatedAt = new Date();
-    mergedRecord.lock = 0;
+    const mergedRecord: MergedOBJ = {
+        [fn.dataSourcesRevert[recordDataSource]]: [{ ...newRecord, updatedAt: now, lastPing: now }],
+        identifiers: getIdentifiers(newRecord.record),
+        updatedAt: now,
+        lock: 0,
+    };
 
     // save newMergeRecord in DB
     await insertOne(mergedRecord);
@@ -28,5 +28,5 @@ export async function addNewEntity(matchedRecord: MatchedRecord) {
     // send to next service queue
     await sendToQueue(mergedRecord);
 
-    logs.addNewEntity(matchedRecord);
+    logs.addNewEntity(newRecord);
 }

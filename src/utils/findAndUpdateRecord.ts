@@ -19,6 +19,7 @@ export function findAndUpdateRecord(
     compareRecords: CompareRecordsFunc,
 ): [MatchedRecord[], boolean] {
     let updated: boolean = false;
+
     if (!sourceMergedRecords?.length) {
         const now = new Date();
         // if the person has no array of merged records for this datasource, then we add it along with the matched record.
@@ -43,10 +44,8 @@ export function findAndUpdateRecord(
         } else {
             // check for update/diff
             for (let i = 0; i < sourceMergedRecords.length; i++) {
-                const mergedRecordIter = sourceMergedRecords[i];
-
                 if (compareRecords(sourceMergedRecords[i].record, newRecord.record)) {
-                    if (diff(mergedRecordIter, newRecord)) {
+                    if (diff(sourceMergedRecords[i], newRecord)) {
                         // overwrite record
                         const now = new Date();
 

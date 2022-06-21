@@ -6,13 +6,13 @@ import * as logs from './logger/logs';
 require('dotenv').config();
 
 const main = async () => {
+    await initializeMongo();
+    console.log('Initialized Rabbit');
+
     await initializeRabbit();
     await initLogger();
     await activeConsumers();
     logs.initRabbit();
-
-    await initializeMongo();
-    logs.initMongo();
 
     logs.initServer();
 };

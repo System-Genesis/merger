@@ -37,7 +37,7 @@ export interface MergedOBJ {
     aka?: MatchedRecord[];
     es?: MatchedRecord[];
     sf?: MatchedRecord[];
-    adnn?: MatchedRecord[];
+    adNN?: MatchedRecord[];
     city?: MatchedRecord[];
     mir?: MatchedRecord[]; // undefined incase of having to delete records
     identifiers: identifiersType;

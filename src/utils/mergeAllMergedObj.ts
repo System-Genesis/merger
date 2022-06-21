@@ -24,7 +24,7 @@ function mergeAllMergedObj(mergedObjects: MergedOBJ[]) {
             } else if (currMerge[source]) {
                 // source exists only in other obj
                 mergeTo[source] = currMerge[source];
-                logs.mergeRecordToObj(mergeTo, source);
+                logs.mergeSourceToObj(mergeTo, source);
             }
         });
     }

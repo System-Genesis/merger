@@ -19,7 +19,7 @@ export const failToAddNewEntity = (matchedRecord: MatchedRecord) => {
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
         },
     );
@@ -31,11 +31,11 @@ export const deleteRecordFromSource = (delSource: string, newSource: string, mat
         logFields.scopes.app as scopeOption,
         `Removed record from DataSource ${delSource} before adding to DataSource ${newSource}`,
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}, uniqueID: ${
-            matchedRecord.record.userID
+            matchedRecord?.record?.userID
         }`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
             delSource,
         },
@@ -51,7 +51,7 @@ export const addSourceToEntity = (matchedRecord: MatchedRecord) => {
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
         },
     );
@@ -66,7 +66,7 @@ export const addRecordToEntity = (matchedRecord: MatchedRecord) => {
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
         },
     );
@@ -80,13 +80,13 @@ export const mergeTwoRecordsToSource = (mergeTo: MergedOBJ, source: string) => {
         `identifiers: ${JSON.stringify(getIdentifiers(mergeTo.identifiers))}, Source: ${source}`,
         {
             id: getFirstIdentifier(getIdentifiers(mergeTo.identifiers)),
-            uniqueId: mergeTo[source].record.userID,
+            uniqueId: mergeTo[source]?.record?.userID,
             source: source,
         },
     );
 };
 
-export const mergeRecordToObj = (mergeTo: MergedOBJ, source: string) => {
+export const mergeSourceToObj = (mergeTo: MergedOBJ, source: string) => {
     logger.info(
         true,
         logFields.scopes.app as scopeOption,
@@ -94,7 +94,7 @@ export const mergeRecordToObj = (mergeTo: MergedOBJ, source: string) => {
         `identifiers: ${JSON.stringify(getIdentifiers(mergeTo.identifiers))}, Source: ${source}`,
         {
             id: getFirstIdentifier(getIdentifiers(mergeTo.identifiers)),
-            uniqueId: mergeTo[source].record.userID,
+            uniqueId: mergeTo[source]?.record?.userID,
             source: source,
         },
     );
@@ -108,7 +108,7 @@ export const addNewEntity = (matchedRecord: MatchedRecord) => {
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource}`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
         },
     );
@@ -120,11 +120,11 @@ export const overwriteRecord = (matchedRecord: MatchedRecord) => {
         logFields.scopes.app as scopeOption,
         `Updated current record of person, Source: ${matchedRecord.dataSource}`,
         `identifiers: ${JSON.stringify(getIdentifiers(matchedRecord.record))}, Source: ${matchedRecord.dataSource} userId: ${
-            matchedRecord.record.userID
+            matchedRecord?.record?.userID
         }`,
         {
             id: getFirstIdentifier(getIdentifiers(matchedRecord.record)),
-            uniqueId: matchedRecord.record.userID,
+            uniqueId: matchedRecord?.record?.userID,
             source: matchedRecord.dataSource,
         },
     );

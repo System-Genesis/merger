@@ -4,6 +4,7 @@ import config from '../config';
 import { MergedOBJ } from '../types/types';
 
 const { rabbit } = config;
+
 export const initializeRabbit = async () => {
     await menash.connect(rabbit.uri, rabbit.retryOptions);
 

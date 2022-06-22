@@ -376,3 +376,280 @@ describe('', () => {
         expect(resultPerson.length).toEqual(1);
     });
 });
+
+describe('replace mir with city', () => {
+    test('replace mir with city', async () => {
+        await personsDB.deleteMany({});
+
+        const matchedRecord_CITY: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'city_name',
+            },
+            dataSource: 'city_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_MIR: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'mir_name',
+            },
+            dataSource: 'mir_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+
+        await matchedRecordHandler(matchedRecord_CITY);
+        await matchedRecordHandler(matchedRecord_MIR);
+
+        const foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].mir.length).toEqual(1);
+        expect(foundAfterLink[0].city).toBeFalsy();
+    });
+    test('replace mir with city has city left', async () => {
+        await personsDB.deleteMany({});
+
+        const matchedRecord_CITY: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'city_name',
+            },
+            dataSource: 'city_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_CITY_2: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich2',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'city_name',
+            },
+            dataSource: 'city_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_MIR: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'mir_name',
+            },
+            dataSource: 'mir_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+
+        await matchedRecordHandler(matchedRecord_CITY);
+        await matchedRecordHandler(matchedRecord_CITY_2);
+        let foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].mir).toBeFalsy();
+        expect(foundAfterLink[0].city.length).toEqual(2);
+
+        await matchedRecordHandler(matchedRecord_MIR);
+
+        foundAfterLink = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].mir.length).toEqual(1);
+        expect(foundAfterLink[0].city.length).toEqual(1);
+    });
+
+    test('replace city with mir', async () => {
+        await personsDB.deleteMany({});
+
+        const matchedRecord_CITY: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'city_name',
+            },
+            dataSource: 'city_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_MIR: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'mir_name',
+            },
+            dataSource: 'mir_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+
+        await matchedRecordHandler(matchedRecord_MIR);
+        await matchedRecordHandler(matchedRecord_CITY);
+
+        const foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].city.length).toEqual(1);
+        expect(foundAfterLink[0].mir).toBeFalsy();
+    });
+    test('replace mir with city has city left', async () => {
+        await personsDB.deleteMany({});
+
+        const matchedRecord_CITY: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'city_name',
+            },
+            dataSource: 'city_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_MIR_2: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich2',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'mir_name',
+            },
+            dataSource: 'mir_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+        const matchedRecord_MIR: MatchedRecord = {
+            record: {
+                job: 'Liaison - Forward Creative Supervisor',
+                personalNumber: '1',
+                lastName: 'Bogisich',
+                firstName: 'Tianna',
+                entityType: 'agumon',
+                rank: 'champion',
+                dischargeDay: '2023-12-22T04:47:41.597Z',
+                sex: 'ז',
+                phone: '9225',
+                mobilePhone: '54-1178941',
+                hierarchy: 'wallmart/consequatur/est/omnis',
+                userID: 'Tianna_Bogisich',
+                mail: 'Tianna_Bogisich@jello.com',
+                source: 'mir_name',
+            },
+            dataSource: 'mir_name',
+            runUID: '',
+            updatedAt: new Date(),
+            lastPing: new Date(),
+        };
+
+        await matchedRecordHandler(matchedRecord_MIR);
+        await matchedRecordHandler(matchedRecord_MIR_2);
+        let foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].city).toBeFalsy();
+        expect(foundAfterLink[0].mir.length).toEqual(2);
+
+        await matchedRecordHandler(matchedRecord_CITY);
+        foundAfterLink = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_MIR.record) }).lean();
+        expect(foundAfterLink[0].city.length).toEqual(1);
+        expect(foundAfterLink[0].mir.length).toEqual(1);
+    });
+});

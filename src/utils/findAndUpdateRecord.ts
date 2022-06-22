@@ -2,7 +2,6 @@ import { CompareRecordsFunc, MatchedRecord } from '../types/types';
 import * as logs from '../logger/logs';
 import { deleteDuplicateRecord } from './deleteDuplicateRecord';
 import { diff } from './diff';
-import { getIdentifiers } from './identifiersUtils';
 
 /**
  * takes in matched record and checks if it is in sourceMergedRecords, if it is, it then checks if the matching record in sourceMergedRecords needs to be updated,

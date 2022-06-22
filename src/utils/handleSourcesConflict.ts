@@ -4,19 +4,22 @@ import * as logs from '../logger/logs';
 
 export function handleSourcesConflict(source: string, mergedRecord: MergedOBJ, newRecord: MatchedRecord) {
     if (source == fn.dataSources.city && mergedRecord.mir) {
-        deleteSameRecordFromAnotherSource(mergedRecord, newRecord, fn.dataSources.city, fn.dataSources.mir);
-    } else if (source == fn.dataSources.mir && mergedRecord.city) {
         deleteSameRecordFromAnotherSource(mergedRecord, newRecord, fn.dataSources.mir, fn.dataSources.city);
+    } else if (source == fn.dataSources.mir && mergedRecord.city) {
+        deleteSameRecordFromAnotherSource(mergedRecord, newRecord, fn.dataSources.city, fn.dataSources.mir);
     }
 }
 
 export function deleteSameRecordFromAnotherSource(mergedRecord: MergedOBJ, newRecord: MatchedRecord, delSource: string, newSource: string) {
-    for (let i = 0; i < mergedRecord[delSource].length; i += 1) {
-        if (mergedRecord[delSource][i].record.userID === newRecord.record.userID) {
-            mergedRecord[delSource].splice(i, 1);
-            logs.deleteRecordFromSource(delSource, newSource, newRecord);
+    const delSourceReverted: string = fn.dataSourcesRevert[delSource];
+    const newSourceReverted: string = fn.dataSourcesRevert[newSource];
+
+    for (let i = 0; i < mergedRecord[delSourceReverted].length; i += 1) {
+        if (mergedRecord[delSourceReverted][i].record.userID === newRecord.record.userID) {
+            mergedRecord[delSourceReverted].splice(i, 1);
+            logs.deleteRecordFromSource(delSourceReverted, newSourceReverted, newRecord);
         }
     }
 
-    if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource];
+    if (mergedRecord[delSourceReverted].length == 0) delete mergedRecord[delSourceReverted];
 }

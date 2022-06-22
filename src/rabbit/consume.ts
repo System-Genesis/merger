@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { ConsumerMessage } from 'menashmq';
 import { MatchedRecord } from '../types/types';
-import { matchedRecordHandler } from '../service/margeHandler';
+import { matchedRecordHandler } from '../service/mergeHandler';
 import * as logs from '../logger/logs';
 
 const DUPLICATE_ERROR_CODE = 11000;

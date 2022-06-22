@@ -41,3 +41,31 @@ export function mongoQueryByIds(record: basicMatchType | identifiersType): query
 
     return identifiers;
 }
+
+export function hasIdentifiersConflict(identifiers: identifiersType[]): boolean {
+    const ids = <identifiersType>{};
+
+    // for (const idObj of identifiers) {
+    //     const keys = Object.keys(idObj);
+
+    //     for (const key in keys) {
+    //         if (!ids[key]) {
+    //             ids[key] = idObj[key];
+    //         } else if (ids[key] != idObj[key]) {
+    //             return true;
+    //         }
+    //     }
+    // }
+
+    // for noam
+    return identifiers.reduce((_: boolean, id: identifiersType) => {
+        return Object.keys(id).reduce((hasConflict: boolean, key: string) => {
+            if (!ids[key]) {
+                ids[key] = id[key];
+            } else if (ids[key] != id[key]) {
+                return true;
+            }
+            return hasConflict;
+        }, false);
+    }, false);
+}

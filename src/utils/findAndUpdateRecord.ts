@@ -2,6 +2,7 @@ import { CompareRecordsFunc, MatchedRecord } from '../types/types';
 import * as logs from '../logger/logs';
 import { deleteDuplicateRecord } from './deleteDuplicateRecord';
 import { diff } from './diff';
+import { getIdentifiers } from './identifiersUtils';
 
 /**
  * takes in matched record and checks if it is in sourceMergedRecords, if it is, it then checks if the matching record in sourceMergedRecords needs to be updated,
@@ -45,7 +46,9 @@ export function findAndUpdateRecord(
             // check for update/diff
             for (let i = 0; i < sourceMergedRecords.length; i++) {
                 if (compareRecords(sourceMergedRecords[i].record, newRecord.record)) {
-                    if (diff(sourceMergedRecords[i], newRecord)) {
+                    if (!diff(sourceMergedRecords[i], newRecord)) {
+                        sourceMergedRecords[i].lastPing = new Date();
+                    } else {
                         // overwrite record
                         const now = new Date();
 
@@ -60,12 +63,12 @@ export function findAndUpdateRecord(
             if (matchingSourceMergedRecords.length > 1) {
                 // all pass overwriteRecord
                 // delete all duplicates
+                // TODO log
                 deleteDuplicateRecord(sourceMergedRecords, compareRecords, newRecord);
+                logs.deleteDuplicateRecord(newRecord);
             }
         }
     }
 
-    // TODO: why is only first object get the last ping
-    sourceMergedRecords[0].lastPing = new Date();
     return [sourceMergedRecords, updated];
 }

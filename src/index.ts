@@ -20,4 +20,5 @@ const main = async () => {
 main().catch((err) => {
     console.log('Traking System Crash');
     console.log(err.message);
+    process.exit();
 });

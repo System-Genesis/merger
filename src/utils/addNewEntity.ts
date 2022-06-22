@@ -9,8 +9,6 @@ export async function addNewEntity(newRecord: MatchedRecord) {
     const recordDataSource: string = newRecord.dataSource;
 
     if (fn.dataSourcesRevert[recordDataSource] === undefined) {
-        // error that not right source
-        // TODO add log
         throw Error(`${recordDataSource} not recognize in merger dataSourcesRevert:${fn.dataSourcesRevert[recordDataSource]}`);
     }
     const now = new Date();

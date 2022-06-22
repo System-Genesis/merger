@@ -129,3 +129,44 @@ export const overwriteRecord = (matchedRecord: MatchedRecord) => {
         },
     );
 };
+
+export const sendUpdate = (queueName: string, mergedOBJ: MergedOBJ) => {
+    logger.info(
+        true,
+        logFields.scopes.app as scopeOption,
+        `sent to ${queueName}`,
+        `identifiers: ${JSON.stringify(mergedOBJ.identifiers)},
+        Source: ${JSON.stringify(Object.keys(mergedOBJ))}`,
+        {
+            identifiers: mergedOBJ.identifiers,
+            Source: Object.keys(mergedOBJ),
+        },
+    );
+};
+
+export function identifiersConflict(newRecord: MatchedRecord, foundIdentifiers) {
+    logger.error(
+        true,
+        logFields.scopes.app as scopeOption,
+        `identifiers conflict`,
+        `identifiers: ${JSON.stringify(foundIdentifiers)},
+        Source: ${newRecord.dataSource}`,
+        {
+            identifiers: foundIdentifiers,
+            newRecordIdentifiers: getIdentifiers(newRecord.record),
+        },
+    );
+}
+export function deleteDuplicateRecord(newRecord: MatchedRecord) {
+    logger.error(
+        true,
+        logFields.scopes.app as scopeOption,
+        `delete duplicate records`,
+        `identifiers: ${JSON.stringify(getIdentifiers(newRecord.record))},
+        Source: ${newRecord.dataSource}`,
+        {
+            identifiers: getIdentifiers(newRecord.record),
+            userId: newRecord.record.userID,
+        },
+    );
+}

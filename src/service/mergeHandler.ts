@@ -1,21 +1,22 @@
 /* eslint-disable */
-import { queryMongo } from '../types/types';
+import { identifiersType } from '../types/types';
 import { getMatchFunc } from '../utils/recordCompareFunctions';
 import mergeAllMergedObj from '../utils/mergeAllMergedObj';
 import { findAndUpdateRecord } from '../utils/findAndUpdateRecord';
 import fn from '../config/fieldNames';
 import { MatchedRecord, MergedOBJ } from '../types/types';
-import { mongoQueryByIds, getIdentifiers } from '../utils/identifiersUtils';
+import { getIdentifiers, hasIdentifiersConflict } from '../utils/identifiersUtils';
 import { sendToQueue } from '../rabbit/init';
-import { addToDb, findManyByIdentifiers } from '../mongo/repo';
+import { addToDb as saveToDb, findManyByIdentifiers } from '../mongo/repo';
 import { addNewEntity } from '../utils/addNewEntity';
 import { handleSourcesConflict } from '../utils/handleSourcesConflict';
+import * as logs from '../logger/logs';
 
 /**
  * the functions goal is to insert the matchedRecord into the mongo db, either as an update or as a new
  * first we extract the identifiers found in the matchedRecord, and search the db using these identifiers.
  * if we didnt find any records in the db matching to our matchedRecord's identifiers, then we insert it into the db as a new (the 2nd small part of this function)
- * otherwise, if we found one record matching to our record, we check the source in the found db corrosponding to the source of matchedRecord
+ * otherwise, if we found one record matching to our record, we check the source in the found db corresponding to the source of matchedRecord
  * if its empty we add it and if its not we compare and update/do nothing/add (in the function findAndUpdateRecord)
  * if we find multiple objects in the db that have the same identifiers as the ones in matchedRecord,
  * then we conclude that these objects belong to the same person and we merge them into one object, and replace
@@ -25,7 +26,7 @@ import { handleSourcesConflict } from '../utils/handleSourcesConflict';
  */
 export async function matchedRecordHandler(newRecord: MatchedRecord) {
     // prepare to mongo $or QUERY
-    const identifiers: queryMongo = mongoQueryByIds(newRecord.record);
+    const identifiers: identifiersType = getIdentifiers(newRecord.record);
 
     // find in mongo
     const mergedObjects: MergedOBJ[] = await findManyByIdentifiers(identifiers);
@@ -34,10 +35,15 @@ export async function matchedRecordHandler(newRecord: MatchedRecord) {
         await addNewEntity(newRecord);
     } /* need update*/ else {
         // get All identifiers from all records
-        const foundIdentifiers: queryMongo = mergedObjects.reduce(
-            (total: queryMongo, { identifiers }: MergedOBJ) => total.concat(mongoQueryByIds(identifiers)),
+        const foundIdentifiers: identifiersType[] = mergedObjects.reduce(
+            (total: identifiersType[], { identifiers }: MergedOBJ) => total.concat(getIdentifiers(identifiers)),
             [],
         );
+
+        if (hasIdentifiersConflict([...foundIdentifiers, identifiers])) {
+            logs.identifiersConflict(newRecord, [...foundIdentifiers, identifiers]);
+            return;
+        }
 
         // to set the max lock on the new or updated object
         const maxLock = Math.max(...mergedObjects.map(({ lock }: MergedOBJ) => lock));
@@ -63,7 +69,7 @@ export async function matchedRecordHandler(newRecord: MatchedRecord) {
 
         // created insert session so that the delete many and insert one operations are an atomic unit
         // since other parallel runs on records of the same person can disrupt this process and vice versa
-        await addToDb(foundIdentifiers, mergedRecord);
+        await saveToDb(foundIdentifiers, mergedRecord);
         // send to next service queue
         if (updated) await sendToQueue(mergedRecord); // send only if updated
     }

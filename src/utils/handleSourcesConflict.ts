@@ -18,5 +18,5 @@ export function deleteSameRecordFromAnotherSource(mergedRecord: MergedOBJ, newRe
         }
     }
 
-    if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource]; // TODO check if right ADDED
+    if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource];
 }

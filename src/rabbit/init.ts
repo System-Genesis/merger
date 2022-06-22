@@ -2,6 +2,7 @@ import menash from 'menashmq';
 import { consumeMerger } from './consume';
 import config from '../config';
 import { MergedOBJ } from '../types/types';
+import * as logs from '../logger/logs';
 
 const { rabbit } = config;
 
@@ -15,8 +16,8 @@ export const initializeRabbit = async () => {
 };
 
 export async function sendToQueue(mergedRecord: MergedOBJ) {
-    // TODO log
     await menash.send(config.rabbit.afterMerge, mergedRecord, { persistent: true });
+    logs.sendUpdate(config.rabbit.afterMerge, mergedRecord);
 }
 
 export const activeConsumers = async () => {

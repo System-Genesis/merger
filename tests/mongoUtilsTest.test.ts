@@ -1,9 +1,10 @@
 import * as dotenv from 'dotenv';
 import { MatchedRecord } from '../src/types/types';
 import personsDB from '../src/mongo/models';
-import { matchedRecordHandler } from '../src/service/margeHandler';
+import { matchedRecordHandler } from '../src/service/mergeHandler';
 import { initializeMongo } from '../src/mongo/init';
 import { mongoQueryByIds } from '../src/utils/identifiersUtils';
+
 dotenv.config();
 
 let sendToRabbit = 0;

@@ -34,11 +34,12 @@ describe('', () => {
         const matchedRecordaka: MatchedRecord = base_record({ personalNumber: '2954115', source: 'aka' });
 
         await matchedRecordHandler(matchedRecordes);
+        expect(sendToRabbit).toEqual(1);
         await matchedRecordHandler(matchedRecordaka);
+        expect(sendToRabbit).toEqual(2);
         const found = await personsDB.find({ $or: mongoQueryByIds(matchedRecordes.record) }).exec();
 
         expect(found.length).toEqual(1);
-        expect(sendToRabbit).toEqual(2);
     });
 
     test('merges 2 unrelated records after adding a 3rd record that links them together', async () => {
@@ -50,16 +51,20 @@ describe('', () => {
         const matchedRecord_aka: MatchedRecord = base_record({ identityCard: '2', personalNumber: '1', source: 'aka' });
 
         await matchedRecordHandler(matchedRecord_ES);
+        expect(sendToRabbit).toEqual(1);
         await matchedRecordHandler(matchedRecord_ES);
 
         await matchedRecordHandler(matchedRecord_adNN);
+        expect(sendToRabbit).toEqual(2);
         await matchedRecordHandler(matchedRecord_adNN_2);
+        expect(sendToRabbit).toEqual(3);
         const foundBeforeLink = await personsDB.find({}).lean();
 
         expect(foundBeforeLink.length).toEqual(2);
         expect(foundBeforeLink[1].adNN?.length).toEqual(2);
         expect(foundBeforeLink[0].es?.length).toEqual(1);
         await matchedRecordHandler(matchedRecord_aka);
+        expect(sendToRabbit).toEqual(4);
         await matchedRecordHandler(matchedRecord_adNN);
         await matchedRecordHandler(matchedRecord_adNN_2);
         await matchedRecordHandler(matchedRecord_adNN);
@@ -67,15 +72,18 @@ describe('', () => {
 
         matchedRecord_adNN_2.record.firstName = 'new Name';
         await matchedRecordHandler(matchedRecord_adNN_2);
+        expect(sendToRabbit).toEqual(5);
 
         matchedRecord_ES.record.firstName = 'temp Name';
         await matchedRecordHandler(matchedRecord_ES);
+        expect(sendToRabbit).toEqual(6);
 
         const esTempName: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_ES.record) }).lean();
         expect(esTempName[0].es[0].record.firstName).toEqual('temp Name');
 
         matchedRecord_ES.record.firstName = 'new Name';
         await matchedRecordHandler(matchedRecord_ES);
+        expect(sendToRabbit).toEqual(7);
 
         const foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_ES.record) }).lean();
 
@@ -83,7 +91,6 @@ describe('', () => {
         expect(foundAfterLink[0].adNN.length).toEqual(2);
         expect(foundAfterLink[0].adNN[1].record.firstName).toEqual('new Name');
         expect(foundAfterLink[0].es[0].record.firstName).toEqual('new Name');
-        expect(sendToRabbit).toEqual(7);
     });
 
     test('delete duplicate records with same user id', async () => {

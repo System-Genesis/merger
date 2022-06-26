@@ -58,7 +58,7 @@ export function hasIdentifiersConflict(identifiers: identifiersType[]): boolean 
     // }
 
     // for noam
-    return identifiers.reduce((_: boolean, id: identifiersType) => {
+    return identifiers.reduce((conflict: boolean, id: identifiersType) => {
         return Object.keys(id).reduce((hasConflict: boolean, key: string) => {
             if (!ids[key]) {
                 ids[key] = id[key];
@@ -66,6 +66,6 @@ export function hasIdentifiersConflict(identifiers: identifiersType[]): boolean 
                 return true;
             }
             return hasConflict;
-        }, false);
+        }, conflict);
     }, false);
 }

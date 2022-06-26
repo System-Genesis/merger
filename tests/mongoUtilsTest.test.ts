@@ -199,6 +199,7 @@ describe('', () => {
 
     test('conflict ids', async () => {
         await personsDB.deleteMany({});
+
         const matchedRecord_1: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tn_Boh2', source: 'mir_name' });
         const matchedRecord_2_8: MatchedRecord = base_record({ personalNumber: '2', identityCard: '8', userID: 'Tn_Boh2', source: 'mir_name' });
         const matchedRecord_1_8: MatchedRecord = base_record({ personalNumber: '1', identityCard: '8', userID: 'Tn_Boh2', source: 'mir_name' });

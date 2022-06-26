@@ -127,8 +127,6 @@ describe('', () => {
 
         const resultPerson = await personsDB.find({}).exec();
 
-        console.log('resultPerson');
-        console.log(resultPerson);
         expect(resultPerson.length).toEqual(1);
     });
 

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     dataSources: {
         aka: 'aka',
         es: 'es_name',

@@ -1,8 +1,4 @@
 {
-  "eslint.validate": ["javascript", "typescript"],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
   "editor.formatOnSave": true,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -20,7 +16,11 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
-    "editor.quickSuggestions": true
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
   },
   "cSpell.words": ["prefetch"]
 }

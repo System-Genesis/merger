@@ -12,7 +12,6 @@ export const base_record = ({ source, personalNumber, identityCard, userID }: BA
         record: {
             job: 'Liaison - Forward Creative Supervisor',
             lastName: 'Bogisich',
-            firstName: 'Tianna',
             entityType: 'agumon',
             rank: 'champion',
             dischargeDay: '2023-12-22T04:47:41.597Z',

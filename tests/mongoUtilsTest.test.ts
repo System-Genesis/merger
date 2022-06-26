@@ -26,8 +26,6 @@ describe('', () => {
     });
 
     test('merges record from aka and record from es', async () => {
-        const found2 = await personsDB.find({}).exec();
-        console.log(found2);
         await personsDB.deleteMany({});
 
         const matchedRecordes: MatchedRecord = base_record({ personalNumber: '2954115', userID: 'Tianna_Bogisich', source: 'es_name' });
@@ -35,6 +33,7 @@ describe('', () => {
 
         await matchedRecordHandler(matchedRecordes);
         expect(sendToRabbit).toEqual(1);
+        await matchedRecordHandler(matchedRecordaka);
         await matchedRecordHandler(matchedRecordaka);
         expect(sendToRabbit).toEqual(2);
         const found = await personsDB.find({ $or: mongoQueryByIds(matchedRecordes.record) }).exec();
@@ -46,6 +45,7 @@ describe('', () => {
         await personsDB.deleteMany({});
 
         const matchedRecord_ES: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tianna_Bogisich', source: 'es_name' });
+        const matchedRecord_ES_2: MatchedRecord = base_record({ identityCard: '2', userID: 'Tianna_Bogch', source: 'es_name' });
         const matchedRecord_adNN: MatchedRecord = base_record({ identityCard: '2', userID: 'user_1', source: 'adNN_name' });
         const matchedRecord_adNN_2: MatchedRecord = base_record({ identityCard: '2', userID: 'user_2', source: 'adNN_name' });
         const matchedRecord_aka: MatchedRecord = base_record({ identityCard: '2', personalNumber: '1', source: 'aka' });
@@ -63,8 +63,12 @@ describe('', () => {
         expect(foundBeforeLink.length).toEqual(2);
         expect(foundBeforeLink[1].adNN?.length).toEqual(2);
         expect(foundBeforeLink[0].es?.length).toEqual(1);
-        await matchedRecordHandler(matchedRecord_aka);
+
+        await matchedRecordHandler(matchedRecord_ES_2);
         expect(sendToRabbit).toEqual(4);
+
+        await matchedRecordHandler(matchedRecord_aka);
+        expect(sendToRabbit).toEqual(5);
         await matchedRecordHandler(matchedRecord_adNN);
         await matchedRecordHandler(matchedRecord_adNN_2);
         await matchedRecordHandler(matchedRecord_adNN);
@@ -72,23 +76,24 @@ describe('', () => {
 
         matchedRecord_adNN_2.record.firstName = 'new Name';
         await matchedRecordHandler(matchedRecord_adNN_2);
-        expect(sendToRabbit).toEqual(5);
+        expect(sendToRabbit).toEqual(6);
 
         matchedRecord_ES.record.firstName = 'temp Name';
         await matchedRecordHandler(matchedRecord_ES);
-        expect(sendToRabbit).toEqual(6);
+        expect(sendToRabbit).toEqual(7);
 
         const esTempName: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_ES.record) }).lean();
         expect(esTempName[0].es[0].record.firstName).toEqual('temp Name');
 
         matchedRecord_ES.record.firstName = 'new Name';
         await matchedRecordHandler(matchedRecord_ES);
-        expect(sendToRabbit).toEqual(7);
+        expect(sendToRabbit).toEqual(8);
 
         const foundAfterLink: any[] = await personsDB.find({ $or: mongoQueryByIds(matchedRecord_ES.record) }).lean();
 
         expect(foundAfterLink.length).toEqual(1);
         expect(foundAfterLink[0].adNN.length).toEqual(2);
+        expect(foundAfterLink[0].es.length).toEqual(2);
         expect(foundAfterLink[0].adNN[1].record.firstName).toEqual('new Name');
         expect(foundAfterLink[0].es[0].record.firstName).toEqual('new Name');
     });
@@ -116,7 +121,11 @@ describe('', () => {
     test('adding 4th record to the first 3', async () => {
         await personsDB.deleteMany({});
         const matchedRecordes: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tianna_Bogisich', source: 'es_name' });
-        const matchedRecordadNN: MatchedRecord = base_record({ identityCard: '2', userID: 'Bogisich_Tianna', source: 'adNN_name' });
+        // test also the diff with different keys number
+        const matchedRecordadNN: MatchedRecord = {
+            ...base_record({ identityCard: '2', userID: 'Bogisich_Tianna', source: 'adNN_name' }),
+            record: { ...base_record({ identityCard: '2', userID: 'Bogisich_Tianna', source: 'adNN_name' }).record, firstName: 'dd' },
+        };
         const matchedRecordaka: MatchedRecord = base_record({ personalNumber: '1', identityCard: '2', source: 'aka' });
         const matchedRecordsf: MatchedRecord = base_record({ identityCard: '2', userID: 'B_Tianna', source: 'sf_name' });
 
@@ -180,7 +189,12 @@ describe('', () => {
         await personsDB.deleteMany({});
 
         const matchedRecord_CITY: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tianna_Bogisich', source: 'city_name' });
-        const matchedRecord_MIR_2: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tianna_Bogisich2', source: 'mir_name' });
+        const matchedRecord_MIR_2: MatchedRecord = base_record({
+            personalNumber: '1',
+            userID: 'Tianna_Bogisich2',
+            identityCard: '3',
+            source: 'mir_name',
+        });
         const matchedRecord_MIR: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tianna_Bogisich', source: 'mir_name' });
 
         await matchedRecordHandler(matchedRecord_MIR);
@@ -212,5 +226,19 @@ describe('', () => {
         let foundAfterLink: any[] = await personsDB.find({}).lean();
 
         expect(foundAfterLink.length).toEqual(2);
+    });
+    test('not exists source', async () => {
+        await personsDB.deleteMany({});
+        const matchedRecord_1: MatchedRecord = base_record({ personalNumber: '1', userID: 'Tn_Boh2', source: 'misdr_name' });
+        try {
+            await matchedRecordHandler(matchedRecord_1);
+            expect('should not came here').toBeFalsy();
+        } catch (error) {
+            expect('should came here').toBeTruthy();
+        }
+
+        let foundAfterLink: any[] = await personsDB.find({}).lean();
+
+        expect(foundAfterLink.length).toEqual(0);
     });
 });

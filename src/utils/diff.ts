@@ -6,8 +6,28 @@ export function diff(mergedRecordIter: MatchedRecord, newRecord: MatchedRecord) 
     }
 
     for (const key of Object.keys(mergedRecordIter.record)) {
-        if (mergedRecordIter.record[key] != newRecord.record[key]) {
-            return true;
+        const mergeVal = mergedRecordIter.record[key];
+        const newVal = newRecord.record[key];
+        if (mergeVal == newVal) {
+            continue;
+        } else {
+            if (Array.isArray(mergeVal)) {
+                if (!Array.isArray(newVal)) {
+                    return true;
+                } else {
+                    if (mergeVal.length !== newVal.length) {
+                        return true;
+                    }
+
+                    for (const val of mergeVal) {
+                        if (!newVal.includes(val)) {
+                            return true;
+                        }
+                    }
+                }
+            } else {
+                return true;
+            }
         }
     }
 

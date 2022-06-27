@@ -17,7 +17,7 @@ export const base_record = ({ source, personalNumber, identityCard, userID }: BA
             dischargeDay: '2023-12-22T04:47:41.597Z',
             sex: 'ז',
             phone: '9225',
-            mobilePhone: '54-1178941',
+            mobilePhone: ['54-1178941'],
             hierarchy: 'wallmart/consequatur/est/omnis',
             mail: 'Tianna_Bogisich@jello.com',
         },

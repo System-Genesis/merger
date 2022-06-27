@@ -14,6 +14,7 @@ const DUPLICATE_ERROR_CODE = 11000;
  */
 export async function consumeMerger(msg: ConsumerMessage) {
     const matchedRecord: MatchedRecord = msg.getContent() as MatchedRecord;
+    logs.getMsg(matchedRecord.record);
 
     while (true) {
         try {

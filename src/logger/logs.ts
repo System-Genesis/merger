@@ -1,6 +1,6 @@
 import logger, { scopeOption } from 'logger-genesis';
 import fn from '../config/fieldNames';
-import { MatchedRecord, MergedOBJ } from '../types/types';
+import { basicMatchType, MatchedRecord, MergedOBJ } from '../types/types';
 import { getFirstIdentifier, getIdentifiers } from '../utils/identifiersUtils';
 
 const { logFields } = fn;
@@ -8,6 +8,13 @@ const { logFields } = fn;
 export const initRabbit = () => logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Rabbit', 'Initialized Rabbit');
 export const initMongo = () => logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Mongo', 'Initialized Mongo');
 export const initServer = () => logger.info(false, logFields.scopes.system as scopeOption, 'Initialized Server', 'Start');
+export const getMsg = (record: basicMatchType) =>
+    logger.info(
+        false,
+        logFields.scopes.system as scopeOption,
+        `Got record from ${record.source}`,
+        `identifiers: ${JSON.stringify(getIdentifiers(record))}`,
+    );
 
 export const conflictDB = (e: Error) => logger.error(true, logFields.scopes.app as scopeOption, 'Parallel insert conflict', e.message);
 

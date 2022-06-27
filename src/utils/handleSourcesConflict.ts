@@ -11,12 +11,12 @@ export function handleSourcesConflict(source: string, mergedRecord: MergedOBJ, n
 }
 
 export function deleteSameRecordFromAnotherSource(mergedRecord: MergedOBJ, newRecord: MatchedRecord, delSource: string, newSource: string) {
-    for (let i = 0; i < mergedRecord[delSource].length; i += 1) {
+    for (let i = 0; i < mergedRecord[delSource]?.length; i += 1) {
         if (mergedRecord[delSource][i].record.userID === newRecord.record.userID) {
             mergedRecord[delSource].splice(i, 1);
             logs.deleteRecordFromSource(delSource, newSource, newRecord);
         }
     }
 
-    if (mergedRecord[delSource].length == 0) delete mergedRecord[delSource];
+    if (mergedRecord[delSource]?.length == 0) delete mergedRecord[delSource];
 }

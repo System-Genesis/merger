@@ -11,8 +11,8 @@ export interface basicMatchType {
     rank: string;
     dischargeDay: string;
     sex: string;
-    phone: string;
-    mobilePhone: string;
+    phone: string | string[];
+    mobilePhone: string | string[];
     hierarchy: string;
     mail: string;
     source: string;
